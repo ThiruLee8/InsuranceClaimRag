@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.routes import agents, chat, conversations, documents, health
+from app.api.routes import agents, chat, conversations, documents, documents_ws, health
 from app.db.database import get_db
 from app.db.models import DocumentStatus, MessageRole
 from app.db.repositories import ConversationRepository, DocumentRepository
@@ -11,6 +11,7 @@ router = APIRouter()
 router.include_router(health.router)
 router.include_router(agents.router)
 router.include_router(documents.router)
+router.include_router(documents_ws.router)
 router.include_router(conversations.router)
 router.include_router(chat.router)
 
@@ -26,9 +27,15 @@ def dashboard(db: Session = Depends(get_db)):
     total_docs = sum(status_counts.values())
     stats = DashboardStats(
         totalDocuments=total_docs,
-        processedDocuments=status_counts.get(DocumentStatus.Processed.value, 0),
+        processedDocuments=status_counts.get(DocumentStatus.Completed.value, 0)
+        + status_counts.get(DocumentStatus.Processed.value, 0),
         processingDocuments=status_counts.get(DocumentStatus.Processing.value, 0)
-        + status_counts.get(DocumentStatus.Uploaded.value, 0),
+        + status_counts.get(DocumentStatus.Uploaded.value, 0)
+        + status_counts.get(DocumentStatus.Queued.value, 0)
+        + status_counts.get(DocumentStatus.ExtractingText.value, 0)
+        + status_counts.get(DocumentStatus.Chunking.value, 0)
+        + status_counts.get(DocumentStatus.GeneratingEmbeddings.value, 0)
+        + status_counts.get(DocumentStatus.Indexing.value, 0),
         failedDocuments=status_counts.get(DocumentStatus.Failed.value, 0),
         totalConversations=conv_repo.count_conversations(),
         totalQuestions=conv_repo.count_user_questions(),

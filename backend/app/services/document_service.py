@@ -5,18 +5,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import BackgroundTasks, UploadFile
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
-from app.db.models import Document, DocumentChunk, DocumentStatus
+from app.db.models import Document, DocumentStatus
 from app.db.repositories import DocumentRepository
-from app.schemas import DocumentOut, DocumentStatusOut, VectorStoreActionOut
+from app.schemas import (
+    DocumentOut,
+    DocumentQueueAcceptedOut,
+    DocumentStatusOut,
+    ProcessAllAcceptedOut,
+    VectorStoreActionOut,
+)
 from app.services.blob_service import BlobService
-from app.services.document_processor import DocumentProcessor
-from app.services.embedding_service import get_embedding_service
-from app.services.vector_store_service import VectorStoreService
+from app.services.document_queue_service import DocumentQueueOperation, DocumentQueueService
+from app.services.vector_gateway_client import VectorGatewayClient
 
 logger = get_logger(__name__)
 
@@ -28,20 +33,22 @@ CONTENT_TYPE_MAP = {
 
 
 class DocumentService:
+    """Web API document orchestration. Never runs extract/chunk/embed or touches Chroma here."""
+
     def __init__(
         self,
         db: Session,
         *,
         blob_service: BlobService | None = None,
-        vector_store: VectorStoreService | None = None,
-        processor: DocumentProcessor | None = None,
+        vector_gateway: VectorGatewayClient | None = None,
+        queue_service: DocumentQueueService | None = None,
     ) -> None:
         self.settings = get_settings()
         self.db = db
         self.repo = DocumentRepository(db)
         self._blob_service = blob_service
-        self.processor = processor or DocumentProcessor()
-        self._vector_store = vector_store
+        self._vector_gateway = vector_gateway
+        self._queue_service = queue_service
 
     @property
     def blob_service(self) -> BlobService:
@@ -50,10 +57,16 @@ class DocumentService:
         return self._blob_service
 
     @property
-    def vector_store(self) -> VectorStoreService:
-        if self._vector_store is None:
-            self._vector_store = VectorStoreService()
-        return self._vector_store
+    def vector_gateway(self) -> VectorGatewayClient:
+        if self._vector_gateway is None:
+            self._vector_gateway = VectorGatewayClient()
+        return self._vector_gateway
+
+    @property
+    def queue_service(self) -> DocumentQueueService:
+        if self._queue_service is None:
+            self._queue_service = DocumentQueueService()
+        return self._queue_service
 
     def _to_out(self, document: Document) -> DocumentOut:
         out = DocumentOut.model_validate(document)
@@ -71,10 +84,24 @@ class DocumentService:
             raise ValueError("chunkOverlap must be >= 0 and less than chunkSize")
         return size, overlap
 
+    def _mark_queued(self, document: Document, *, correlation_id: str, operation: str) -> None:
+        now = datetime.now(timezone.utc)
+        document.Status = DocumentStatus.Queued
+        document.ProgressPercentage = 0
+        document.CurrentStep = "Queued for processing"
+        document.ProcessingError = None
+        document.ProcessedChunks = 0
+        document.TotalChunks = document.TotalChunks or 0
+        document.CorrelationId = correlation_id
+        document.UpdatedAt = now
+        if operation == DocumentQueueOperation.REPROCESS.value:
+            document.ProcessedAt = None
+            document.StartedAt = None
+        self.repo.update(document)
+
     async def upload(
         self,
         file: UploadFile,
-        background_tasks: BackgroundTasks,
         created_by: str | None = None,
         *,
         chunk_size: int | None = None,
@@ -104,33 +131,49 @@ class DocumentService:
         if existing and existing.Status != DocumentStatus.Failed:
             raise FileExistsError("A document with the same content already exists")
 
-        self.blob_service.ensure_container()
-        blob_name, blob_url, safe_name = self.blob_service.upload_bytes(
-            content=content,
-            original_filename=file.filename,
-            content_type=content_type,
-        )
+        document_id = uuid.uuid4()
+        safe_name = self.blob_service.sanitize_filename(file.filename)
+        blob_name = f"{document_id.hex}/{safe_name}"
 
+        # Create metadata before blob write so the Blob Trigger can resolve the document.
         document = Document(
-            Id=uuid.uuid4(),
+            Id=document_id,
             FileName=safe_name,
             OriginalFileName=file.filename,
             BlobContainerName=self.settings.azure_storage_container,
             BlobName=blob_name,
-            BlobUrl=blob_url,
+            BlobUrl="",
             ContentType=content_type,
             FileSize=len(content),
             FileHash=file_hash,
             Status=DocumentStatus.Uploaded,
             ChunkSize=size,
             ChunkOverlap=overlap,
+            ProgressPercentage=0,
+            CurrentStep="Uploaded",
+            TotalChunks=0,
+            ProcessedChunks=0,
+            RetryCount=0,
             CreatedBy=created_by,
         )
         document = self.repo.create(document)
+
+        self.blob_service.ensure_container()
+        _, blob_url, _ = self.blob_service.upload_bytes(
+            content=content,
+            original_filename=file.filename,
+            content_type=content_type,
+            blob_name=blob_name,
+        )
+        document.BlobUrl = blob_url
+        document.UpdatedAt = datetime.now(timezone.utc)
+        document = self.repo.update(document)
         logger.info("document_uploaded", document_id=str(document.Id), file_name=safe_name)
 
-        background_tasks.add_task(process_document_task, document.Id)
-        return self._to_out(document)
+        # Blob Trigger is the primary enqueue path. API also enqueues as a reliable local/Azure fallback.
+        # Concurrent claim + idempotent vector replace protect against duplicate messages.
+        self.enqueue_process(document.Id, operation=DocumentQueueOperation.PROCESS, requested_by="api-upload")
+        return self._to_out(self.repo.get(document.Id) or document)
 
     def list_documents(
         self,
@@ -163,6 +206,13 @@ class DocumentService:
             pageCount=document.PageCount,
             chunkCount=self.repo.chunk_count(document.Id),
             processedAt=document.ProcessedAt,
+            progressPercentage=document.ProgressPercentage or 0,
+            currentStep=document.CurrentStep,
+            totalChunks=document.TotalChunks or 0,
+            processedChunks=document.ProcessedChunks or 0,
+            startedAt=document.StartedAt,
+            updatedAt=document.UpdatedAt,
+            retryCount=document.RetryCount or 0,
         )
 
     def download(self, document_id: UUID) -> tuple[Document, bytes]:
@@ -177,7 +227,7 @@ class DocumentService:
         if not document:
             raise LookupError("Document not found")
         try:
-            self.vector_store.delete_document(document.Id)
+            self.vector_gateway.delete_document(document.Id)
         except Exception as exc:  # noqa: BLE001
             logger.warning("vector_delete_failed", error=str(exc), document_id=str(document_id))
         try:
@@ -191,143 +241,99 @@ class DocumentService:
         self.repo.soft_delete(document)
         logger.info("document_soft_deleted", document_id=str(document_id))
 
-    def reprocess(self, document_id: UUID, background_tasks: BackgroundTasks) -> DocumentOut:
+    def enqueue_process(
+        self,
+        document_id: UUID,
+        *,
+        operation: DocumentQueueOperation | str = DocumentQueueOperation.REPROCESS,
+        requested_by: str = "api",
+        force: bool = True,
+    ) -> DocumentQueueAcceptedOut:
         document = self.repo.get(document_id)
         if not document:
             raise LookupError("Document not found")
-        document.Status = DocumentStatus.Uploaded
-        document.ProcessingError = None
-        document.ProcessedAt = None
-        self.repo.update(document)
-        background_tasks.add_task(process_document_task, document.Id)
-        return self._to_out(document)
+        if document.IsDeleted:
+            raise LookupError("Document not found")
+
+        op = operation.value if isinstance(operation, DocumentQueueOperation) else str(operation)
+        if (
+            not force
+            and document.Status in {DocumentStatus.Completed, DocumentStatus.Processed}
+            and op == DocumentQueueOperation.PROCESS.value
+        ):
+            return DocumentQueueAcceptedOut(
+                documentId=document.Id,
+                status=str(document.Status.value),
+                message="Document already completed; skipped (use force/reprocess to queue again).",
+            )
+
+        message = self.queue_service.enqueue_document(
+            document.Id,
+            operation=op,
+            requested_by=requested_by,
+        )
+        self._mark_queued(document, correlation_id=message.correlationId or "", operation=op)
+        return DocumentQueueAcceptedOut(
+            documentId=document.Id,
+            status="Queued",
+            message="Document processing has been queued.",
+            correlationId=message.correlationId,
+        )
+
+    def reprocess(self, document_id: UUID) -> DocumentQueueAcceptedOut:
+        return self.enqueue_process(
+            document_id,
+            operation=DocumentQueueOperation.REPROCESS,
+            requested_by="api-reprocess",
+            force=True,
+        )
+
+    def process_all(self, *, force: bool = False, requested_by: str = "api-process-all") -> ProcessAllAcceptedOut:
+        active = self.repo.list(
+            skip=0,
+            limit=10_000,
+        )[0]
+        total_found = len(active)
+        to_queue = self.repo.list_active_for_process_all(force=force)
+        correlation_id = str(uuid.uuid4())
+        queued = 0
+        for document in to_queue:
+            op = (
+                DocumentQueueOperation.REPROCESS
+                if force or document.Status in {DocumentStatus.Failed, DocumentStatus.Completed, DocumentStatus.Processed}
+                else DocumentQueueOperation.PROCESS
+            )
+            message = self.queue_service.enqueue_document(
+                document.Id,
+                operation=op,
+                correlation_id=correlation_id,
+                requested_by=requested_by,
+            )
+            self._mark_queued(document, correlation_id=message.correlationId or correlation_id, operation=op.value)
+            queued += 1
+
+        skipped = total_found - queued
+        logger.info(
+            "process_all_queued",
+            total=total_found,
+            queued=queued,
+            skipped=skipped,
+            force=force,
+            correlation_id=correlation_id,
+        )
+        return ProcessAllAcceptedOut(
+            status="Queued",
+            totalDocumentsFound=total_found,
+            documentsQueued=queued,
+            documentsSkipped=skipped,
+            correlationId=correlation_id,
+        )
 
     def clear_vector_store(self) -> VectorStoreActionOut:
-        self.vector_store.clear_collection()
-        logger.info("vector_store_cleared")
+        self.vector_gateway.clear_collection()
+        logger.info("vector_store_cleared_via_functions")
         return VectorStoreActionOut(cleared=True, queued=0, documentIds=[])
 
-    def reprocess_all(self, background_tasks: BackgroundTasks) -> VectorStoreActionOut:
-        ids = self.repo.list_active_ids()
-        for document_id in ids:
-            document = self.repo.get(document_id)
-            if not document:
-                continue
-            document.Status = DocumentStatus.Uploaded
-            document.ProcessingError = None
-            document.ProcessedAt = None
-            self.repo.update(document)
-            background_tasks.add_task(process_document_task, document_id)
-        logger.info("reprocess_all_queued", count=len(ids))
-        return VectorStoreActionOut(cleared=False, queued=len(ids), documentIds=ids)
-
-    def clear_and_reprocess_all(self, background_tasks: BackgroundTasks) -> VectorStoreActionOut:
-        self.vector_store.clear_collection()
-        result = self.reprocess_all(background_tasks)
-        result.cleared = True
-        return result
-
-
-def process_document_task(document_id: UUID) -> None:
-    """Background processing entrypoint (isolated for future worker migration)."""
-    from app.db.database import SessionLocal
-
-    db = SessionLocal()
-    try:
-        _process_document(db, document_id)
-    finally:
-        db.close()
-
-
-def _process_document(db: Session, document_id: UUID) -> None:
-    settings = get_settings()
-    repo = DocumentRepository(db)
-    blob_service = BlobService()
-    processor = DocumentProcessor()
-    vector_store = VectorStoreService()
-    embedding_service = get_embedding_service()
-
-    document = repo.get(document_id)
-    if not document:
-        logger.error("process_document_missing", document_id=str(document_id))
-        return
-
-    document.Status = DocumentStatus.Processing
-    document.ProcessingError = None
-    repo.update(document)
-    logger.info("document_processing_started", document_id=str(document_id))
-
-    try:
-        content = blob_service.download_bytes(document.BlobName)
-        extracted = processor.extract_text(content, document.OriginalFileName, document.ContentType)
-        chunk_size = document.ChunkSize or settings.chunk_size
-        chunk_overlap = document.ChunkOverlap if document.ChunkOverlap is not None else settings.chunk_overlap
-        chunks = processor.chunk_pages(
-            extracted,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-        )
-        if not chunks:
-            raise ValueError("No extractable text found in document")
-
-        vector_store.ensure_collection()
-        vector_store.delete_document(document.Id)
-
-        db_chunks: list[DocumentChunk] = []
-        ids: list[str] = []
-        texts: list[str] = []
-        metadatas: list[dict] = []
-
-        for chunk in chunks:
-            chunk_id = uuid.uuid4()
-            db_chunks.append(
-                DocumentChunk(
-                    Id=chunk_id,
-                    DocumentId=document.Id,
-                    ChunkIndex=chunk.chunk_index,
-                    PageNumber=chunk.page_number,
-                    Content=chunk.content,
-                    CharacterCount=len(chunk.content),
-                )
-            )
-            ids.append(str(chunk_id))
-            texts.append(chunk.content)
-            metadatas.append(
-                {
-                    "document_id": str(document.Id),
-                    "file_name": document.OriginalFileName,
-                    "page_number": chunk.page_number or 0,
-                    "chunk_id": str(chunk_id),
-                    "chunk_index": chunk.chunk_index,
-                }
-            )
-
-        embeddings = embedding_service.embed_texts(texts)
-        vector_store.upsert_chunks(
-            document_id=document.Id,
-            file_name=document.OriginalFileName,
-            ids=ids,
-            documents=texts,
-            embeddings=embeddings,
-            metadatas=metadatas,
-        )
-        repo.replace_chunks(document.Id, db_chunks)
-
-        document.Status = DocumentStatus.Processed
-        document.PageCount = extracted.page_count
-        document.ProcessedAt = datetime.now(timezone.utc)
-        document.ProcessingError = None
-        repo.update(document)
-        logger.info(
-            "document_processing_completed",
-            document_id=str(document_id),
-            chunks=len(chunks),
-            pages=extracted.page_count,
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.error("document_processing_failed", document_id=str(document_id), error=str(exc))
-        document = repo.get(document_id)
-        if document:
-            document.Status = DocumentStatus.Failed
-            document.ProcessingError = str(exc)
-            repo.update(document)
+    def clear_and_reprocess_all(self) -> ProcessAllAcceptedOut:
+        self.vector_gateway.clear_collection()
+        return self.process_all(force=True, requested_by="api-clear-and-reprocess")

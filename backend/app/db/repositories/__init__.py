@@ -28,6 +28,11 @@ class DocumentRepository:
             select(Document).where(Document.FileHash == file_hash, Document.IsDeleted == False)
         )
 
+    def get_by_blob_name(self, blob_name: str) -> Document | None:
+        return self.db.scalar(
+            select(Document).where(Document.BlobName == blob_name, Document.IsDeleted == False)
+        )
+
     def list(
         self,
         *,
@@ -71,6 +76,25 @@ class DocumentRepository:
                 .order_by(Document.UploadedAt.asc())
             ).all()
         )
+
+    def list_active_for_process_all(self, *, force: bool = False) -> list[Document]:
+        query = select(Document).where(Document.IsDeleted == False)
+        if not force:
+            query = query.where(
+                Document.Status.notin_(
+                    [
+                        DocumentStatus.Completed,
+                        DocumentStatus.Processed,
+                        DocumentStatus.Processing,
+                        DocumentStatus.ExtractingText,
+                        DocumentStatus.Chunking,
+                        DocumentStatus.GeneratingEmbeddings,
+                        DocumentStatus.Indexing,
+                        DocumentStatus.Queued,
+                    ]
+                )
+            )
+        return list(self.db.scalars(query.order_by(Document.UploadedAt.asc())).all())
 
     def update(self, document: Document) -> Document:
         self.db.add(document)

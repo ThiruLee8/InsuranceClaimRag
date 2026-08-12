@@ -6,8 +6,10 @@ import {
   ApiResponse,
   DocumentItem,
   DocumentListResponse,
+  DocumentQueueAccepted,
   DocumentStatus,
   DocumentStatusResponse,
+  ProcessAllAccepted,
   VectorStoreActionResponse,
 } from '../models/api.models';
 
@@ -65,9 +67,22 @@ export class DocumentService {
       .pipe(map(() => void 0));
   }
 
-  reprocess(id: string): Observable<DocumentItem> {
+  process(id: string): Observable<DocumentQueueAccepted> {
     return this.http
-      .post<ApiResponse<DocumentItem>>(`${this.baseUrl}/${id}/reprocess`, {})
+      .post<ApiResponse<DocumentQueueAccepted>>(`${this.baseUrl}/${id}/process`, {})
+      .pipe(map((res) => res.data!));
+  }
+
+  reprocess(id: string): Observable<DocumentQueueAccepted> {
+    return this.http
+      .post<ApiResponse<DocumentQueueAccepted>>(`${this.baseUrl}/${id}/reprocess`, {})
+      .pipe(map((res) => res.data!));
+  }
+
+  processAll(force = false): Observable<ProcessAllAccepted> {
+    const params = new HttpParams().set('force', String(force));
+    return this.http
+      .post<ApiResponse<ProcessAllAccepted>>(`${this.baseUrl}/process-all`, {}, { params })
       .pipe(map((res) => res.data!));
   }
 
@@ -77,15 +92,15 @@ export class DocumentService {
       .pipe(map((res) => res.data!));
   }
 
-  reprocessAll(): Observable<VectorStoreActionResponse> {
+  reprocessAll(): Observable<ProcessAllAccepted> {
     return this.http
-      .post<ApiResponse<VectorStoreActionResponse>>(`${this.baseUrl}/reprocess-all`, {})
+      .post<ApiResponse<ProcessAllAccepted>>(`${this.baseUrl}/reprocess-all`, {})
       .pipe(map((res) => res.data!));
   }
 
-  clearAndReprocessAll(): Observable<VectorStoreActionResponse> {
+  clearAndReprocessAll(): Observable<ProcessAllAccepted> {
     return this.http
-      .post<ApiResponse<VectorStoreActionResponse>>(
+      .post<ApiResponse<ProcessAllAccepted>>(
         `${this.baseUrl}/vector-store/clear-and-reprocess`,
         {}
       )

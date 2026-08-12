@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator
 from typing import Protocol
 
 import httpx
@@ -18,6 +20,10 @@ class LLMProvider(Protocol):
         self, *, prompt: str, system: str | None = None, model: str | None = None
     ) -> str: ...
 
+    def generate_stream(
+        self, *, prompt: str, system: str | None = None, model: str | None = None
+    ) -> AsyncIterator[str]: ...
+
 
 class OllamaLLMService:
     def __init__(self) -> None:
@@ -25,20 +31,27 @@ class OllamaLLMService:
         self.base_url = self.settings.ollama_base_url.rstrip("/")
         self.model = self.settings.ollama_model
 
-    async def generate(
-        self, *, prompt: str, system: str | None = None, model: str | None = None
-    ) -> str:
+    def _payload(
+        self, *, prompt: str, system: str | None, model: str | None, stream: bool
+    ) -> dict:
         selected_model = (model or self.model).strip() or self.model
-        payload = {
+        payload: dict = {
             "model": selected_model,
             "prompt": prompt,
-            "stream": False,
+            "stream": stream,
             "options": {"temperature": 0.1},
         }
         if system:
             payload["system"] = system
+        return payload
 
-        logger.info("ollama_request", model=selected_model)
+    async def generate(
+        self, *, prompt: str, system: str | None = None, model: str | None = None
+    ) -> str:
+        selected_model = (model or self.model).strip() or self.model
+        payload = self._payload(prompt=prompt, system=system, model=model, stream=False)
+
+        logger.info("ollama_request", model=selected_model, stream=False)
         async with httpx.AsyncClient(timeout=180.0) as client:
             response = await client.post(f"{self.base_url}/api/generate", json=payload)
             response.raise_for_status()
@@ -46,6 +59,31 @@ class OllamaLLMService:
         answer = (data.get("response") or "").strip()
         logger.info("ollama_response_received", model=selected_model, chars=len(answer))
         return answer
+
+    async def generate_stream(
+        self, *, prompt: str, system: str | None = None, model: str | None = None
+    ) -> AsyncIterator[str]:
+        selected_model = (model or self.model).strip() or self.model
+        payload = self._payload(prompt=prompt, system=system, model=model, stream=True)
+
+        logger.info("ollama_request", model=selected_model, stream=True)
+        chars = 0
+        async with httpx.AsyncClient(timeout=180.0) as client:
+            async with client.stream(
+                "POST", f"{self.base_url}/api/generate", json=payload
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line.strip():
+                        continue
+                    data = json.loads(line)
+                    token = data.get("response") or ""
+                    if token:
+                        chars += len(token)
+                        yield token
+                    if data.get("done"):
+                        break
+        logger.info("ollama_stream_complete", model=selected_model, chars=chars)
 
     async def list_models(self) -> list[str]:
         try:

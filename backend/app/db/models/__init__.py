@@ -22,10 +22,33 @@ from app.db.database import Base
 
 class DocumentStatus(str, enum.Enum):
     Uploaded = "Uploaded"
+    Queued = "Queued"
     Processing = "Processing"
+    ExtractingText = "ExtractingText"
+    Chunking = "Chunking"
+    GeneratingEmbeddings = "GeneratingEmbeddings"
+    Indexing = "Indexing"
+    Completed = "Completed"
+    # Legacy alias kept for older rows/clients
     Processed = "Processed"
     Failed = "Failed"
     Deleted = "Deleted"
+
+    @classmethod
+    def is_terminal(cls, status: "DocumentStatus | str") -> bool:
+        value = status.value if isinstance(status, DocumentStatus) else str(status)
+        return value in {cls.Completed.value, cls.Processed.value, cls.Failed.value, cls.Deleted.value}
+
+    @classmethod
+    def is_actively_processing(cls, status: "DocumentStatus | str") -> bool:
+        value = status.value if isinstance(status, DocumentStatus) else str(status)
+        return value in {
+            cls.Processing.value,
+            cls.ExtractingText.value,
+            cls.Chunking.value,
+            cls.GeneratingEmbeddings.value,
+            cls.Indexing.value,
+        }
 
 
 class MessageRole(str, enum.Enum):
@@ -55,8 +78,16 @@ class Document(Base):
     PageCount: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ChunkSize: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ChunkOverlap: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ProgressPercentage: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    CurrentStep: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    TotalChunks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    ProcessedChunks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    StartedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     UploadedAt: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.sysutcdatetime())
     ProcessedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    UpdatedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    RetryCount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    CorrelationId: Mapped[str | None] = mapped_column(String(64), nullable=True)
     CreatedBy: Mapped[str | None] = mapped_column(String(256), nullable=True)
     IsDeleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

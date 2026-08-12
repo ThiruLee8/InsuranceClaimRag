@@ -32,7 +32,7 @@ services:
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite:latest
     container_name: insurance-rag-azurite
-    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --loose
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --loose --skipApiVersionCheck
     ports:
       - "10000:10000"
       - "10001:10001"
@@ -71,6 +71,9 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: insurance-rag-ollama
+    environment:
+      # Keep model resident so chat doesn't pay a long cold-load each question.
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:--1}
     ports:
       - "11434:11434"
     volumes:
@@ -100,6 +103,8 @@ services:
         until ollama list >/dev/null 2>&1; do sleep 3; done
         echo "Pulling model $$OLLAMA_MODEL..."
         ollama pull "$$OLLAMA_MODEL"
+        echo "Warming model $$OLLAMA_MODEL..."
+        curl -s http://ollama:11434/api/generate -d "{\"model\":\"$$OLLAMA_MODEL\",\"prompt\":\"hi\",\"stream\":false,\"options\":{\"num_predict\":1}}" >/dev/null || true
         echo "Ollama model ready."
     networks:
       - insurance-rag-net
@@ -118,35 +123,31 @@ services:
       SQL_SERVER_DATABASE: ${SQL_SERVER_DATABASE:-InsuranceRagDb}
       SQL_SERVER_USERNAME: ${SQL_SERVER_USERNAME:-sa}
       SQL_SERVER_PASSWORD: ${SQL_SERVER_PASSWORD:-Your_Str0ng_SA_Password!}
-      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;}
+      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;}
       AZURE_STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-insurance-documents}
-      CHROMA_HOST: chromadb
-      CHROMA_PORT: 8000
-      CHROMA_COLLECTION: ${CHROMA_COLLECTION:-insurance_claims_documents}
+      DOCUMENT_PROCESSING_QUEUE_NAME: ${DOCUMENT_PROCESSING_QUEUE_NAME:-document-processing}
+      DOCUMENT_PROCESSOR_BASE_URL: ${DOCUMENT_PROCESSOR_BASE_URL:-http://document-processor:80}
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
       CHUNK_SIZE: ${CHUNK_SIZE:-800}
       CHUNK_OVERLAP: ${CHUNK_OVERLAP:-150}
       TOP_K: ${TOP_K:-5}
       SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.3}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:80}
-      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-25}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-100}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       API_HOST: 0.0.0.0
       API_PORT: 8000
     ports:
       - "8000:8000"
-    volumes:
-      - embedding_cache:/root/.cache
     depends_on:
       sqlserver:
         condition: service_healthy
       azurite:
         condition: service_started
-      chromadb:
-        condition: service_started
       ollama:
+        condition: service_started
+      document-processor:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
@@ -154,6 +155,45 @@ services:
       timeout: 10s
       retries: 20
       start_period: 60s
+    networks:
+      - insurance-rag-net
+
+  document-processor:
+    build:
+      context: .
+      dockerfile: document_processor/Dockerfile
+    container_name: insurance-rag-document-processor
+    environment:
+      AzureWebJobsStorage: ${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;}
+      AzureWebJobsFeatureFlags: EnableWorkerIndexing
+      FUNCTIONS_WORKER_RUNTIME: python
+      DOCUMENT_CONTAINER_NAME: ${AZURE_STORAGE_CONTAINER:-insurance-documents}
+      DOCUMENT_PROCESSING_QUEUE_NAME: ${DOCUMENT_PROCESSING_QUEUE_NAME:-document-processing}
+      SQL_SERVER_HOST: sqlserver
+      SQL_SERVER_PORT: 1433
+      SQL_SERVER_DATABASE: ${SQL_SERVER_DATABASE:-InsuranceRagDb}
+      SQL_SERVER_USERNAME: ${SQL_SERVER_USERNAME:-sa}
+      SQL_SERVER_PASSWORD: ${SQL_SERVER_PASSWORD:-Your_Str0ng_SA_Password!}
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      CHROMA_COLLECTION: ${CHROMA_COLLECTION:-insurance_claims_documents}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+      CHUNK_SIZE: ${CHUNK_SIZE:-800}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-150}
+      MAX_RETRY_COUNT: ${MAX_RETRY_COUNT:-3}
+      PROCESSING_BATCH_SIZE: ${PROCESSING_BATCH_SIZE:-25}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "7071:80"
+    volumes:
+      - embedding_cache:/home/site/wwwroot/.cache/huggingface
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      azurite:
+        condition: service_started
+      chromadb:
+        condition: service_started
     networks:
       - insurance-rag-net
 

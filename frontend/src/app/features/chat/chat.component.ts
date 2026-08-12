@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -30,7 +29,6 @@ import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
     DecimalPipe,
     RouterLink,
     ReactiveFormsModule,
-    MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -62,7 +60,9 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   loadingConversations = true;
   loadingMessages = false;
   sending = false;
+  streamStage: 'idle' | 'retrieving' | 'generating' = 'idle';
   private shouldScroll = false;
+  private streamAssistantId: string | null = null;
 
   form = this.fb.group({
     question: ['', [Validators.required, Validators.maxLength(4000)]],
@@ -157,6 +157,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     if (!question) return;
 
     this.sending = true;
+    this.streamStage = 'retrieving';
     this.form.reset();
     this.messages = [
       ...this.messages,
@@ -170,18 +171,154 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       },
     ];
     this.shouldScroll = true;
+    this.startStream(question);
+  }
 
-    this.chatService.ask(question, this.activeConversationId, this.agentOptions()).subscribe({
-      next: (res) => {
-        this.activeConversationId = res.conversationId;
-        this.sending = false;
-        this.selectConversation(res.conversationId);
-        this.refreshConversations();
+  private startStream(
+    question: string,
+    options?: { regenerateMessageId?: string; reuseLastUserMessage?: boolean }
+  ): void {
+    const assistantId = `temp-assistant-${Date.now()}`;
+    this.streamAssistantId = assistantId;
+    this.messages = [
+      ...this.messages.filter((m) => !m.streaming && !m.failed),
+      {
+        id: assistantId,
+        conversationId: this.activeConversationId || '',
+        role: 'assistant',
+        content: '',
+        createdAt: new Date().toISOString(),
+        sources: [],
+        streaming: true,
+        failed: false,
+        errorMessage: null,
       },
-      error: () => {
-        this.sending = false;
-      },
-    });
+    ];
+
+    this.chatService
+      .askStream(question, this.activeConversationId, {
+        ...this.agentOptions(),
+        regenerateMessageId: options?.regenerateMessageId || null,
+        reuseLastUserMessage: !!options?.reuseLastUserMessage,
+      })
+      .subscribe({
+        next: (event) => {
+          if (event.type === 'meta') {
+            this.activeConversationId = event.conversationId;
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { c: event.conversationId },
+              queryParamsHandling: 'merge',
+            });
+            return;
+          }
+          if (event.type === 'status') {
+            this.streamStage = event.stage === 'generating' ? 'generating' : 'retrieving';
+            return;
+          }
+          if (event.type === 'sources') {
+            this.patchStreamingAssistant({ sources: event.sources || [] });
+            return;
+          }
+          if (event.type === 'token') {
+            this.streamStage = 'generating';
+            const current = this.messages.find((m) => m.id === this.streamAssistantId);
+            this.patchStreamingAssistant({
+              content: (current?.content || '') + event.content,
+            });
+            this.shouldScroll = true;
+            return;
+          }
+          if (event.type === 'done') {
+            this.activeConversationId = event.conversationId;
+            this.patchStreamingAssistant({
+              id: event.messageId,
+              conversationId: event.conversationId,
+              content: event.answer,
+              sources: event.sources || [],
+              modelName: event.model || null,
+              streaming: false,
+              failed: false,
+              errorMessage: null,
+            });
+            this.streamAssistantId = null;
+            this.sending = false;
+            this.streamStage = 'idle';
+            this.refreshConversations();
+            this.shouldScroll = true;
+          }
+        },
+        error: (err) => {
+          const message =
+            err instanceof Error && err.message
+              ? err.message
+              : 'Generation failed. You can retry this message.';
+          this.patchStreamingAssistant({
+            streaming: false,
+            failed: true,
+            errorMessage: message,
+            content:
+              this.messages.find((m) => m.id === this.streamAssistantId)?.content ||
+              'Something went wrong while generating the answer.',
+          });
+          this.sending = false;
+          this.streamStage = 'idle';
+          this.streamAssistantId = null;
+          this.notifications.error('Chat response failed — use Retry to try again');
+        },
+      });
+  }
+
+  private patchStreamingAssistant(patch: Partial<MessageItem>): void {
+    const targetId = this.streamAssistantId;
+    if (!targetId) return;
+    this.messages = this.messages.map((m) => (m.id === targetId ? { ...m, ...patch } : m));
+  }
+
+  retryAssistant(message: MessageItem): void {
+    if (this.sending) return;
+    const idx = this.messages.findIndex((m) => m.id === message.id);
+    if (idx < 0) return;
+    const priorUser = [...this.messages]
+      .slice(0, idx)
+      .reverse()
+      .find((m) => m.role === 'user');
+    if (!priorUser) return;
+
+    this.sending = true;
+    this.streamStage = 'retrieving';
+    this.messages = this.messages.slice(0, idx);
+
+    const isPersistedId = !message.id.startsWith('temp-');
+    if (message.failed || !isPersistedId) {
+      this.startStream(priorUser.content, { reuseLastUserMessage: true });
+      return;
+    }
+    this.startStream(priorUser.content, { regenerateMessageId: message.id });
+  }
+
+  retryUser(message: MessageItem): void {
+    if (this.sending || message.role !== 'user') return;
+    const idx = this.messages.findIndex((m) => m.id === message.id);
+    if (idx < 0) return;
+
+    const following = this.messages[idx + 1];
+    this.sending = true;
+    this.streamStage = 'retrieving';
+
+    if (following?.role === 'assistant') {
+      this.messages = this.messages.slice(0, idx + 1);
+      const isPersistedId = !following.id.startsWith('temp-') && !following.failed;
+      if (isPersistedId) {
+        this.startStream(message.content, { regenerateMessageId: following.id });
+      } else {
+        this.startStream(message.content, { reuseLastUserMessage: true });
+      }
+      return;
+    }
+
+    // No assistant reply yet — reuse the persisted user message.
+    this.startStream(message.content, { reuseLastUserMessage: true });
   }
 
   rename(conv: ConversationItem, event: Event): void {
@@ -229,31 +366,6 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   }
 
   regenerate(message: MessageItem): void {
-    if (!this.activeConversationId || this.sending) return;
-    const idx = this.messages.findIndex((m) => m.id === message.id);
-    const priorUser = [...this.messages]
-      .slice(0, idx)
-      .reverse()
-      .find((m) => m.role === 'user');
-    if (!priorUser) return;
-
-    this.sending = true;
-    this.chatService
-      .regenerate(
-        priorUser.content,
-        this.activeConversationId,
-        message.id,
-        this.agentOptions()
-      )
-      .subscribe({
-        next: () => {
-          this.sending = false;
-          this.selectConversation(this.activeConversationId!);
-          this.refreshConversations();
-        },
-        error: () => {
-          this.sending = false;
-        },
-      });
+    this.retryAssistant(message);
   }
 }

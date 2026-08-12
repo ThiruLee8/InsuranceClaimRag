@@ -21,24 +21,26 @@ class Settings(BaseSettings):
     sql_server_password: str = "Your_Str0ng_SA_Password!"
     database_url: str | None = None
 
-    # Azurite / Azure Blob
+    # Azurite / Azure Blob + Queue
     azure_storage_connection_string: str = (
         "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
         "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
         "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+        "QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;"
     )
     azure_storage_container: str = "insurance-documents"
+    document_processing_queue_name: str = "document-processing"
+    max_retry_count: int = 3
+    processing_batch_size: int = 25
 
-    # ChromaDB
-    chroma_host: str = "localhost"
-    chroma_port: int = 8001
-    chroma_collection: str = "insurance_claims_documents"
+    # Azure Functions document-processor (owns all Chroma / vector access)
+    document_processor_base_url: str = "http://localhost:7071"
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
 
-    # Embeddings
+    # Embeddings defaults are used by Functions; kept here only for upload chunk defaults docs
     embedding_model: str = "all-MiniLM-L6-v2"
 
     # RAG
@@ -51,7 +53,7 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     cors_origins: str = "http://localhost:4200"
-    max_upload_size_mb: int = 25
+    max_upload_size_mb: int = 100
     log_level: str = "INFO"
 
     allowed_extensions: List[str] = Field(

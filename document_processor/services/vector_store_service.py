@@ -4,11 +4,20 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+# Azure Functions Python base image ships an older system sqlite; Chroma needs >= 3.35.
+try:
+    import pysqlite3 as sqlite3  # type: ignore
+    import sys
+
+    sys.modules["sqlite3"] = sqlite3
+except Exception:
+    pass
+
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 
-from app.core.config import get_settings
-from app.core.logging import get_logger
+from shared.configuration import get_settings
+from shared.logging_utils import get_logger
 
 logger = get_logger(__name__)
 

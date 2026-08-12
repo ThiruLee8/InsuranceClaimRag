@@ -5,7 +5,7 @@
         <h2>Conversations</h2>
         <p class="sidebar__hint">Select or start a thread</p>
       </div>
-      <button mat-flat-button color="primary" class="sidebar__new" (click)="newConversation()">
+      <button type="button" class="btn btn--accent btn--sm" (click)="newConversation()">
         <mat-icon>add</mat-icon>
         New
       </button>
@@ -44,29 +44,32 @@
 
   <div class="chat-panel">
     <header class="chat-panel__header">
-      <div>
-        <h1>Insurance Claims Assistant</h1>
-        <p>Ask questions grounded in uploaded claim documents.</p>
+      <div class="chat-panel__title">
+        <h1>Claims Assistant</h1>
+        <p>Grounded answers from your uploaded documents</p>
       </div>
       <div class="chat-panel__controls">
-        <mat-form-field appearance="outline" class="agent-field">
+        <mat-form-field appearance="outline" class="select-field" subscriptSizing="dynamic">
           <mat-label>Agent</mat-label>
-          <mat-select [(value)]="selectedAgentId">
+          <mat-select [(value)]="selectedAgentId" panelClass="select-panel">
             @for (agent of agents; track agent.id) {
               <mat-option [value]="agent.id">{{ agent.name }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
-        <mat-form-field appearance="outline" class="agent-field">
+        <mat-form-field appearance="outline" class="select-field select-field--model" subscriptSizing="dynamic">
           <mat-label>Model</mat-label>
-          <mat-select [(value)]="selectedModel">
+          <mat-select [(value)]="selectedModel" panelClass="select-panel">
             @for (model of models; track model) {
               <mat-option [value]="model">{{ model }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
         @if (activeConversationId) {
-          <button mat-stroked-button (click)="clearConversation()">Clear</button>
+          <button type="button" class="btn btn--ghost btn--sm" (click)="clearConversation()">
+            <mat-icon>delete_sweep</mat-icon>
+            Clear
+          </button>
         }
       </div>
     </header>
@@ -82,10 +85,30 @@
         </div>
       } @else {
         @for (message of messages; track message.id) {
-          <article class="bubble" [class.bubble--user]="message.role === 'user'" [class.bubble--assistant]="message.role === 'assistant'">
+          <article
+            class="bubble"
+            [class.bubble--user]="message.role === 'user'"
+            [class.bubble--assistant]="message.role === 'assistant'"
+            [class.bubble--failed]="message.failed"
+          >
             <div class="bubble__role">{{ message.role === 'user' ? 'You' : 'Assistant' }}</div>
             @if (message.role === 'assistant') {
               <div class="markdown" [innerHTML]="message.content | markdown"></div>
+              @if (message.streaming && !message.content) {
+                <div class="thinking thinking--inline">
+                  <mat-spinner diameter="18" />
+                  <span>{{ streamStage === 'generating' ? 'Generating...' : 'Retrieving documents...' }}</span>
+                </div>
+              }
+              @if (message.streaming && message.content) {
+                <span class="stream-caret" aria-hidden="true"></span>
+              }
+              @if (message.failed) {
+                <div class="bubble__error">
+                  <mat-icon>error_outline</mat-icon>
+                  <span>{{ message.errorMessage || 'Generation failed.' }}</span>
+                </div>
+              }
               @if (message.sources.length) {
                 <div class="sources">
                   <h4>Sources</h4>
@@ -106,35 +129,59 @@
                   }
                 </div>
               }
-              <div class="bubble__actions">
-                <button mat-button type="button" (click)="copyAnswer(message.content)">
-                  <mat-icon>content_copy</mat-icon> Copy
-                </button>
-                <button mat-button type="button" [disabled]="sending" (click)="regenerate(message)">
-                  <mat-icon>refresh</mat-icon> Regenerate
-                </button>
-              </div>
+              @if (!message.streaming) {
+                <div class="bubble__actions">
+                  @if (!message.failed) {
+                    <button type="button" class="btn btn--ghost btn--xs" (click)="copyAnswer(message.content)">
+                      <mat-icon>content_copy</mat-icon>
+                      Copy
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="btn btn--retry btn--xs"
+                    [disabled]="sending"
+                    (click)="retryAssistant(message)"
+                  >
+                    <mat-icon>refresh</mat-icon>
+                    {{ message.failed ? 'Retry' : 'Regenerate' }}
+                  </button>
+                </div>
+              }
             } @else {
               <div>{{ message.content }}</div>
+              <div class="bubble__actions">
+                <button
+                  type="button"
+                  class="btn btn--retry btn--xs"
+                  [disabled]="sending"
+                  (click)="retryUser(message)"
+                >
+                  <mat-icon>replay</mat-icon>
+                  Retry
+                </button>
+              </div>
             }
           </article>
         }
       }
-
-      @if (sending) {
-        <div class="thinking">
-          <mat-spinner diameter="22" />
-          <span>Retrieving documents and generating answer...</span>
-        </div>
-      }
     </div>
 
     <form class="composer" [formGroup]="form" (ngSubmit)="send()">
-      <mat-form-field appearance="outline" class="composer__field">
-        <mat-label>Ask a question about the claim documents...</mat-label>
-        <textarea matInput rows="2" formControlName="question" (keydown.enter)="$event.preventDefault(); send()"></textarea>
+      <mat-form-field appearance="outline" class="composer__field" subscriptSizing="dynamic">
+        <mat-label>Ask about the claim documents…</mat-label>
+        <textarea
+          matInput
+          rows="2"
+          formControlName="question"
+          (keydown.enter)="$event.preventDefault(); send()"
+        ></textarea>
       </mat-form-field>
-      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || sending">
+      <button
+        type="submit"
+        class="btn btn--primary btn--send"
+        [disabled]="form.invalid || sending"
+      >
         <mat-icon>send</mat-icon>
         Send
       </button>

@@ -11,8 +11,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subscription, interval, startWith, switchMap } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { DocumentItem, DocumentStatus } from '../../core/models/api.models';
+import { DocumentRealtimeService } from '../../core/services/document-realtime.service';
 import { DocumentService } from '../../core/services/document.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
@@ -42,12 +43,33 @@ import { DocumentUploadComponent } from './upload/document-upload.component';
 })
 export class DocumentsComponent implements OnInit, OnDestroy {
   private readonly documentService = inject(DocumentService);
+  private readonly realtime = inject(DocumentRealtimeService);
   private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
-  private pollSub?: Subscription;
+  private socketSub?: Subscription;
 
-  readonly displayedColumns = ['fileName', 'type', 'size', 'status', 'uploadedAt', 'processedAt', 'actions'];
-  readonly statuses: Array<DocumentStatus | ''> = ['', 'Uploaded', 'Processing', 'Processed', 'Failed'];
+  readonly displayedColumns = [
+    'fileName',
+    'type',
+    'size',
+    'status',
+    'progress',
+    'uploadedAt',
+    'processedAt',
+    'actions',
+  ];
+  readonly statuses: Array<DocumentStatus | ''> = [
+    '',
+    'Uploaded',
+    'Queued',
+    'Processing',
+    'ExtractingText',
+    'Chunking',
+    'GeneratingEmbeddings',
+    'Indexing',
+    'Completed',
+    'Failed',
+  ];
 
   loading = true;
   adminBusy = false;
@@ -62,30 +84,29 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.load();
-    this.pollSub = interval(4000)
-      .pipe(
-        startWith(0),
-        switchMap(() =>
-          this.documentService.list({
-            search: this.filters.value.search || undefined,
-            status: this.filters.value.status || undefined,
-            contentType: this.filters.value.contentType || undefined,
-          })
-        )
-      )
-      .subscribe({
-        next: (res) => {
-          this.documents = res.items;
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
-      });
   }
 
   ngOnDestroy(): void {
-    this.pollSub?.unsubscribe();
+    this.socketSub?.unsubscribe();
+  }
+
+  private connectRealtime(): void {
+    this.socketSub?.unsubscribe();
+    this.socketSub = this.realtime
+      .watchList({
+        search: this.filters.value.search || undefined,
+        status: this.filters.value.status || undefined,
+        contentType: this.filters.value.contentType || undefined,
+      })
+      .subscribe({
+        next: (msg) => {
+          this.documents = msg.documents;
+          this.loading = false;
+        },
+        error: () => {
+          this.notifications.error('Realtime document updates disconnected');
+        },
+      });
   }
 
   load(): void {
@@ -100,9 +121,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.documents = res.items;
           this.loading = false;
+          this.connectRealtime();
         },
         error: () => {
           this.loading = false;
+          // Still try websocket so progress can appear if list HTTP failed transiently.
+          this.connectRealtime();
         },
       });
   }
@@ -123,16 +147,14 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     this.documentService.delete(doc.id).subscribe({
       next: () => {
         this.notifications.success('Document soft-deleted (blob removed)');
-        this.load();
       },
     });
   }
 
   reprocess(doc: DocumentItem): void {
-    this.documentService.reprocess(doc.id).subscribe({
+    this.documentService.process(doc.id).subscribe({
       next: () => {
-        this.notifications.success('Reprocessing started');
-        this.load();
+        this.notifications.success('Document queued for processing');
       },
     });
   }
@@ -154,11 +176,12 @@ export class DocumentsComponent implements OnInit, OnDestroy {
   reprocessAll(): void {
     if (!confirm('Reprocess all documents from blob storage into the vector database?')) return;
     this.adminBusy = true;
-    this.documentService.reprocessAll().subscribe({
+    this.documentService.processAll(true).subscribe({
       next: (res) => {
         this.adminBusy = false;
-        this.notifications.success(`Queued ${res.queued} document(s) for reprocessing`);
-        this.load();
+        this.notifications.success(
+          `Queued ${res.documentsQueued} of ${res.totalDocumentsFound} document(s)`
+        );
       },
       error: () => {
         this.adminBusy = false;
@@ -179,9 +202,8 @@ export class DocumentsComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.adminBusy = false;
         this.notifications.success(
-          `Vector store cleared. Queued ${res.queued} document(s) for reprocessing`
+          `Vector store cleared. Queued ${res.documentsQueued} document(s)`
         );
-        this.load();
       },
       error: () => {
         this.adminBusy = false;
@@ -191,5 +213,15 @@ export class DocumentsComponent implements OnInit, OnDestroy {
 
   statusClass(status: DocumentStatus): string {
     return `status status--${status.toLowerCase()}`;
+  }
+
+  isInFlight(status: DocumentStatus): boolean {
+    return ![
+      'Uploaded',
+      'Completed',
+      'Processed',
+      'Failed',
+      'Deleted',
+    ].includes(status);
   }
 }

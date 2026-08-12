@@ -1,12 +1,20 @@
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from fastapi.responses import Response
 
 from app.api.dependencies import get_document_service
 from app.core.exceptions import raise_http
 from app.db.models import DocumentStatus
-from app.schemas import ApiResponse, DocumentListOut, DocumentOut, DocumentStatusOut, VectorStoreActionOut
+from app.schemas import (
+    ApiResponse,
+    DocumentListOut,
+    DocumentOut,
+    DocumentQueueAcceptedOut,
+    DocumentStatusOut,
+    ProcessAllAcceptedOut,
+    VectorStoreActionOut,
+)
 from app.services.document_service import DocumentService
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -36,27 +44,46 @@ def clear_vector_store(service: DocumentService = Depends(get_document_service))
         raise_http(f"Failed to clear vector store: {exc}", "VECTOR_CLEAR_ERROR", 500)
 
 
-@router.post("/reprocess-all", response_model=ApiResponse[VectorStoreActionOut])
-def reprocess_all_documents(
-    background_tasks: BackgroundTasks,
+@router.post(
+    "/process-all",
+    response_model=ApiResponse[ProcessAllAcceptedOut],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def process_all_documents(
+    force: bool = Query(False, description="When true, also queue Completed documents for reprocess"),
     service: DocumentService = Depends(get_document_service),
 ):
     try:
-        result = service.reprocess_all(background_tasks)
-        return ApiResponse(message="Reprocessing queued for all documents", data=result)
+        result = service.process_all(force=force)
+        return ApiResponse(message="Documents queued for processing", data=result)
+    except Exception as exc:  # noqa: BLE001
+        raise_http(f"Failed to queue process-all: {exc}", "PROCESS_ALL_ERROR", 500)
+
+
+@router.post(
+    "/reprocess-all",
+    response_model=ApiResponse[ProcessAllAcceptedOut],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def reprocess_all_documents(service: DocumentService = Depends(get_document_service)):
+    """Compatibility alias for process-all?force=true."""
+    try:
+        result = service.process_all(force=True, requested_by="api-reprocess-all")
+        return ApiResponse(message="Documents queued for reprocessing", data=result)
     except Exception as exc:  # noqa: BLE001
         raise_http(f"Failed to queue reprocess: {exc}", "REPROCESS_ALL_ERROR", 500)
 
 
-@router.post("/vector-store/clear-and-reprocess", response_model=ApiResponse[VectorStoreActionOut])
-def clear_and_reprocess_all(
-    background_tasks: BackgroundTasks,
-    service: DocumentService = Depends(get_document_service),
-):
+@router.post(
+    "/vector-store/clear-and-reprocess",
+    response_model=ApiResponse[ProcessAllAcceptedOut],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def clear_and_reprocess_all(service: DocumentService = Depends(get_document_service)):
     try:
-        result = service.clear_and_reprocess_all(background_tasks)
+        result = service.clear_and_reprocess_all()
         return ApiResponse(
-            message="Vector store cleared and reprocessing queued from blob storage",
+            message="Vector store cleared and documents queued for reprocessing",
             data=result,
         )
     except Exception as exc:  # noqa: BLE001
@@ -73,7 +100,6 @@ def get_document(document_id: UUID, service: DocumentService = Depends(get_docum
 
 @router.post("/upload", response_model=ApiResponse[DocumentOut], status_code=201)
 async def upload_document(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     chunkSize: int | None = Form(None),
     chunkOverlap: int | None = Form(None),
@@ -82,11 +108,10 @@ async def upload_document(
     try:
         document = await service.upload(
             file,
-            background_tasks,
             chunk_size=chunkSize,
             chunk_overlap=chunkOverlap,
         )
-        return ApiResponse(message="Document uploaded", data=document)
+        return ApiResponse(message="Document uploaded and queued for processing", data=document)
     except FileExistsError as exc:
         raise_http(str(exc), "DOCUMENT_CONFLICT", 409)
     except ValueError as exc:
@@ -106,14 +131,31 @@ def delete_document(document_id: UUID, service: DocumentService = Depends(get_do
         raise_http(f"Delete failed: {exc}", "DOCUMENT_DELETE_ERROR", 500)
 
 
-@router.post("/{document_id}/reprocess", response_model=ApiResponse[DocumentOut])
-def reprocess_document(
-    document_id: UUID,
-    background_tasks: BackgroundTasks,
-    service: DocumentService = Depends(get_document_service),
-):
+@router.post(
+    "/{document_id}/process",
+    response_model=ApiResponse[DocumentQueueAcceptedOut],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def process_document(document_id: UUID, service: DocumentService = Depends(get_document_service)):
     try:
-        return ApiResponse(message="Reprocessing started", data=service.reprocess(document_id, background_tasks))
+        return ApiResponse(
+            message="Document processing has been queued.",
+            data=service.enqueue_process(document_id, requested_by="api-process"),
+        )
+    except LookupError:
+        raise_http("Document not found", "DOCUMENT_NOT_FOUND", 404)
+    except Exception as exc:  # noqa: BLE001
+        raise_http(f"Failed to queue document: {exc}", "DOCUMENT_PROCESS_ERROR", 500)
+
+
+@router.post(
+    "/{document_id}/reprocess",
+    response_model=ApiResponse[DocumentQueueAcceptedOut],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def reprocess_document(document_id: UUID, service: DocumentService = Depends(get_document_service)):
+    try:
+        return ApiResponse(message="Reprocessing queued", data=service.reprocess(document_id))
     except LookupError:
         raise_http("Document not found", "DOCUMENT_NOT_FOUND", 404)
 

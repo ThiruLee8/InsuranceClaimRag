@@ -1,6 +1,12 @@
 export type DocumentStatus =
   | 'Uploaded'
+  | 'Queued'
   | 'Processing'
+  | 'ExtractingText'
+  | 'Chunking'
+  | 'GeneratingEmbeddings'
+  | 'Indexing'
+  | 'Completed'
   | 'Processed'
   | 'Failed'
   | 'Deleted';
@@ -29,8 +35,16 @@ export interface DocumentItem {
   pageCount?: number | null;
   chunkSize?: number | null;
   chunkOverlap?: number | null;
+  progressPercentage?: number;
+  currentStep?: string | null;
+  totalChunks?: number;
+  processedChunks?: number;
+  startedAt?: string | null;
   uploadedAt: string;
   processedAt?: string | null;
+  updatedAt?: string | null;
+  retryCount?: number;
+  correlationId?: string | null;
   createdBy?: string | null;
   chunkCount?: number | null;
 }
@@ -47,6 +61,28 @@ export interface DocumentStatusResponse {
   pageCount?: number | null;
   chunkCount: number;
   processedAt?: string | null;
+  progressPercentage: number;
+  currentStep?: string | null;
+  totalChunks: number;
+  processedChunks: number;
+  startedAt?: string | null;
+  updatedAt?: string | null;
+  retryCount: number;
+}
+
+export interface DocumentQueueAccepted {
+  documentId: string;
+  status: string;
+  message: string;
+  correlationId?: string | null;
+}
+
+export interface ProcessAllAccepted {
+  status: string;
+  totalDocumentsFound: number;
+  documentsQueued: number;
+  documentsSkipped: number;
+  correlationId?: string | null;
 }
 
 export interface ConversationItem {
@@ -75,6 +111,9 @@ export interface MessageItem {
   tokenCount?: number | null;
   modelName?: string | null;
   sources: RagSource[];
+  streaming?: boolean;
+  failed?: boolean;
+  errorMessage?: string | null;
 }
 
 export interface ChatResponse {

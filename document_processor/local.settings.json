@@ -1,0 +1,24 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+    "DOCUMENT_CONTAINER_NAME": "insurance-documents",
+    "DOCUMENT_PROCESSING_QUEUE_NAME": "document-processing",
+    "SQL_SERVER_HOST": "localhost",
+    "SQL_SERVER_PORT": "1433",
+    "SQL_SERVER_DATABASE": "InsuranceRagDb",
+    "SQL_SERVER_USERNAME": "sa",
+    "SQL_SERVER_PASSWORD": "Your_Str0ng_SA_Password!",
+    "CHROMA_HOST": "localhost",
+    "CHROMA_PORT": "8001",
+    "CHROMA_COLLECTION": "insurance_claims_documents",
+    "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
+    "CHUNK_SIZE": "800",
+    "CHUNK_OVERLAP": "150",
+    "MAX_RETRY_COUNT": "3",
+    "PROCESSING_BATCH_SIZE": "25",
+    "LOG_LEVEL": "INFO"
+  }
+}

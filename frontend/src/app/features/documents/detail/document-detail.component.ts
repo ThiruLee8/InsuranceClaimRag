@@ -4,9 +4,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subscription, interval, startWith, switchMap } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { DocumentItem } from '../../../core/models/api.models';
+import { DocumentRealtimeService } from '../../../core/services/document-realtime.service';
 import { DocumentService } from '../../../core/services/document.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { FileSizePipe } from '../../../shared/pipes/file-size.pipe';
@@ -20,6 +22,7 @@ import { FileSizePipe } from '../../../shared/pipes/file-size.pipe';
     MatButtonModule,
     MatCardModule,
     MatIconModule,
+    MatProgressBarModule,
     MatProgressSpinnerModule,
     FileSizePipe,
   ],
@@ -30,8 +33,9 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly documentService = inject(DocumentService);
+  private readonly realtime = inject(DocumentRealtimeService);
   private readonly notifications = inject(NotificationService);
-  private pollSub?: Subscription;
+  private socketSub?: Subscription;
 
   loading = true;
   document: DocumentItem | null = null;
@@ -39,27 +43,38 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
-    this.pollSub = interval(3000)
-      .pipe(
-        startWith(0),
-        switchMap(() => this.documentService.get(id))
-      )
-      .subscribe({
-        next: (doc) => {
-          this.document = doc;
-          this.loading = false;
-          if (doc.status === 'Processed' || doc.status === 'Failed') {
-            this.pollSub?.unsubscribe();
-          }
-        },
-        error: () => {
-          this.loading = false;
-        },
-      });
+    this.watch(id);
   }
 
   ngOnDestroy(): void {
-    this.pollSub?.unsubscribe();
+    this.socketSub?.unsubscribe();
+  }
+
+  private watch(id: string): void {
+    this.socketSub?.unsubscribe();
+    this.loading = true;
+
+    this.documentService.get(id).subscribe({
+      next: (doc) => {
+        this.document = doc;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      },
+    });
+
+    this.socketSub = this.realtime.watchDocument(id).subscribe({
+      next: (msg) => {
+        if (msg.deleted || !msg.document) {
+          this.notifications.error('Document was deleted');
+          this.router.navigate(['/documents']);
+          return;
+        }
+        this.document = msg.document;
+        this.loading = false;
+      },
+    });
   }
 
   download(): void {
@@ -70,24 +85,10 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   reprocess(): void {
     if (!this.document) return;
     const id = this.document.id;
-    this.documentService.reprocess(id).subscribe({
-      next: (doc) => {
-        this.document = doc;
-        this.notifications.success('Reprocessing started');
-        this.pollSub?.unsubscribe();
-        this.pollSub = interval(3000)
-          .pipe(
-            startWith(0),
-            switchMap(() => this.documentService.get(id))
-          )
-          .subscribe({
-            next: (updated) => {
-              this.document = updated;
-              if (updated.status === 'Processed' || updated.status === 'Failed') {
-                this.pollSub?.unsubscribe();
-              }
-            },
-          });
+    this.documentService.process(id).subscribe({
+      next: () => {
+        this.notifications.success('Document queued for processing');
+        this.watch(id);
       },
     });
   }

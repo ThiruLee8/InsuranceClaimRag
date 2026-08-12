@@ -29,6 +29,28 @@
   gap: 0.5rem;
 }
 
+.progress-card {
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(18, 50, 70, 0.08);
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: #123246;
+  }
+
+  &__meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.55rem;
+    color: #5b7383;
+    font-size: 0.85rem;
+  }
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

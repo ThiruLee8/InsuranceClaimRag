@@ -5,8 +5,8 @@ from typing import Protocol
 
 from sentence_transformers import SentenceTransformer
 
-from app.core.config import get_settings
-from app.core.logging import get_logger
+from shared.configuration import get_settings
+from shared.logging_utils import get_logger
 
 logger = get_logger(__name__)
 

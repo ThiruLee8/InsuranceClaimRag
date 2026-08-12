@@ -10,7 +10,7 @@ import pytest
 from app.schemas import ChatRequest
 from app.services.conversation_service import ConversationService
 from app.services.rag_service import RAGResult
-from app.services.vector_store_service import VectorSearchHit
+from app.services.vector_gateway_client import VectorSearchHit
 
 
 @pytest.mark.asyncio

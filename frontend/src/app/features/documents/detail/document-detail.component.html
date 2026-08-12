@@ -7,14 +7,37 @@
     <header class="page__header">
       <div>
         <h1>{{ document.originalFileName }}</h1>
-        <p>Status: <strong>{{ document.status }}</strong></p>
+        <p>
+          Status: <strong>{{ document.status }}</strong>
+          @if (document.currentStep) {
+            · {{ document.currentStep }}
+          }
+        </p>
       </div>
       <div class="actions">
         <button mat-stroked-button (click)="download()"><mat-icon>download</mat-icon> Download</button>
-        <button mat-stroked-button (click)="reprocess()"><mat-icon>refresh</mat-icon> Reprocess</button>
+        <button mat-stroked-button (click)="reprocess()"><mat-icon>playlist_add</mat-icon> Queue Process</button>
         <button mat-stroked-button color="warn" (click)="delete()"><mat-icon>delete</mat-icon> Delete</button>
       </div>
     </header>
+
+    <mat-card class="progress-card">
+      <h2>Processing progress</h2>
+      <mat-progress-bar mode="determinate" [value]="document.progressPercentage || 0" />
+      <div class="progress-card__meta">
+        <span>{{ document.progressPercentage || 0 }}%</span>
+        <span>
+          Chunks:
+          {{ document.processedChunks || 0 }} / {{ document.totalChunks || document.chunkCount || 0 }}
+        </span>
+      </div>
+      @if (document.processingError) {
+        <div class="error-box">
+          <h3>Processing error</h3>
+          <p>{{ document.processingError }}</p>
+        </div>
+      }
+    </mat-card>
 
     <div class="grid">
       <mat-card>
@@ -23,9 +46,10 @@
           <div><dt>File type</dt><dd>{{ document.contentType }}</dd></div>
           <div><dt>Size</dt><dd>{{ document.fileSize | fileSize }}</dd></div>
           <div><dt>Uploaded</dt><dd>{{ document.uploadedAt | date: 'medium' }}</dd></div>
-          <div><dt>Processed</dt><dd>{{ document.processedAt ? (document.processedAt | date: 'medium') : '—' }}</dd></div>
+          <div><dt>Started</dt><dd>{{ document.startedAt ? (document.startedAt | date: 'medium') : '—' }}</dd></div>
+          <div><dt>Completed</dt><dd>{{ document.processedAt ? (document.processedAt | date: 'medium') : '—' }}</dd></div>
           <div><dt>Pages</dt><dd>{{ document.pageCount ?? '—' }}</dd></div>
-          <div><dt>Chunks</dt><dd>{{ document.chunkCount ?? 0 }}</dd></div>
+          <div><dt>Retries</dt><dd>{{ document.retryCount ?? 0 }}</dd></div>
         </dl>
       </mat-card>
 
@@ -35,13 +59,8 @@
           <div><dt>Container</dt><dd>{{ document.blobContainerName }}</dd></div>
           <div><dt>Blob name</dt><dd>{{ document.blobName }}</dd></div>
           <div><dt>Hash</dt><dd class="mono">{{ document.fileHash }}</dd></div>
+          <div><dt>Correlation</dt><dd class="mono">{{ document.correlationId || '—' }}</dd></div>
         </dl>
-        @if (document.processingError) {
-          <div class="error-box">
-            <h3>Processing error</h3>
-            <p>{{ document.processingError }}</p>
-          </div>
-        }
       </mat-card>
     </div>
   }

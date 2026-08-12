@@ -10,7 +10,7 @@ from app.api.router import router as api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.services.blob_service import BlobService
-from app.services.vector_store_service import VectorStoreService
+
 
 configure_logging()
 logger = get_logger(__name__)
@@ -25,9 +25,11 @@ async def lifespan(_: FastAPI):
     except Exception as exc:  # noqa: BLE001
         logger.warning("blob_init_failed", error=str(exc))
     try:
-        VectorStoreService().ensure_collection()
+        from app.services.document_queue_service import DocumentQueueService
+
+        DocumentQueueService().ensure_queue()
     except Exception as exc:  # noqa: BLE001
-        logger.warning("chroma_init_failed", error=str(exc))
+        logger.warning("queue_init_failed", error=str(exc))
     yield
     logger.info("application_shutdown")
 

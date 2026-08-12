@@ -29,7 +29,7 @@ export class DocumentUploadComponent {
 
   @Output() uploaded = new EventEmitter<void>();
 
-  readonly maxSizeMb = 25;
+  readonly maxSizeMb = 100;
   readonly allowed = ['.pdf', '.docx', '.txt'];
 
   dragging = false;

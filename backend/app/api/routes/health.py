@@ -6,7 +6,7 @@ from app.db.database import get_db
 from app.schemas import ApiResponse, HealthOut
 from app.services.blob_service import BlobService
 from app.services.llm_service import OllamaLLMService
-from app.services.vector_store_service import VectorStoreService
+from app.services.vector_gateway_client import VectorGatewayClient
 
 router = APIRouter(tags=["health"])
 
@@ -20,7 +20,7 @@ async def health(db: Session = Depends(get_db)) -> ApiResponse[HealthOut]:
         sql_status = "unavailable"
 
     azurite_status = BlobService().health_check()
-    chroma_status = VectorStoreService().health_check()
+    chroma_status = VectorGatewayClient().health_check()
     ollama_status = await OllamaLLMService().health_check()
 
     overall = "ok" if all(

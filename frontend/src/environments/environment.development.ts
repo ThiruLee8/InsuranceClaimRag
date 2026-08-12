@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://localhost:8000/api',
+  apiBaseUrl: '/api',
+  wsBaseUrl: '', // resolved at runtime from window.location
 };

@@ -45,23 +45,24 @@ class BlobService:
         content: bytes,
         original_filename: str,
         content_type: str,
+        blob_name: str | None = None,
     ) -> tuple[str, str, str]:
         safe_name = self.sanitize_filename(original_filename)
-        blob_name = f"{uuid.uuid4().hex}/{safe_name}"
-        blob_client = self._client.get_blob_client(self.container_name, blob_name)
+        resolved_blob_name = blob_name or f"{uuid.uuid4().hex}/{safe_name}"
+        blob_client = self._client.get_blob_client(self.container_name, resolved_blob_name)
         blob_client.upload_blob(
             content,
-            overwrite=False,
+            overwrite=True,
             content_settings=ContentSettings(content_type=content_type),
         )
         url = blob_client.url
         logger.info(
             "blob_uploaded",
             container=self.container_name,
-            blob_name=blob_name,
+            blob_name=resolved_blob_name,
             size=len(content),
         )
-        return blob_name, url, safe_name
+        return resolved_blob_name, url, safe_name
 
     def download_bytes(self, blob_name: str) -> bytes:
         blob_client = self._client.get_blob_client(self.container_name, blob_name)

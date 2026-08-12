@@ -40,8 +40,16 @@ class DocumentOut(BaseModel):
     pageCount: Optional[int] = Field(default=None, validation_alias="PageCount")
     chunkSize: Optional[int] = Field(default=None, validation_alias="ChunkSize")
     chunkOverlap: Optional[int] = Field(default=None, validation_alias="ChunkOverlap")
+    progressPercentage: int = Field(default=0, validation_alias="ProgressPercentage")
+    currentStep: Optional[str] = Field(default=None, validation_alias="CurrentStep")
+    totalChunks: int = Field(default=0, validation_alias="TotalChunks")
+    processedChunks: int = Field(default=0, validation_alias="ProcessedChunks")
+    startedAt: Optional[datetime] = Field(default=None, validation_alias="StartedAt")
     uploadedAt: datetime = Field(validation_alias="UploadedAt")
     processedAt: Optional[datetime] = Field(default=None, validation_alias="ProcessedAt")
+    updatedAt: Optional[datetime] = Field(default=None, validation_alias="UpdatedAt")
+    retryCount: int = Field(default=0, validation_alias="RetryCount")
+    correlationId: Optional[str] = Field(default=None, validation_alias="CorrelationId")
     createdBy: Optional[str] = Field(default=None, validation_alias="CreatedBy")
     chunkCount: Optional[int] = None
 
@@ -53,6 +61,28 @@ class DocumentStatusOut(BaseModel):
     pageCount: Optional[int] = None
     chunkCount: int = 0
     processedAt: Optional[datetime] = None
+    progressPercentage: int = 0
+    currentStep: Optional[str] = None
+    totalChunks: int = 0
+    processedChunks: int = 0
+    startedAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
+    retryCount: int = 0
+
+
+class DocumentQueueAcceptedOut(BaseModel):
+    documentId: UUID
+    status: str = "Queued"
+    message: str = "Document processing has been queued."
+    correlationId: Optional[str] = None
+
+
+class ProcessAllAcceptedOut(BaseModel):
+    status: str = "Queued"
+    totalDocumentsFound: int
+    documentsQueued: int
+    documentsSkipped: int
+    correlationId: Optional[str] = None
 
 
 class DocumentListOut(BaseModel):
@@ -105,6 +135,8 @@ class ChatRequest(BaseModel):
     conversationId: Optional[UUID] = None
     question: str = Field(min_length=1, max_length=4000)
     regenerateMessageId: Optional[UUID] = None
+    # When true, do not insert another user row (retry after a failed generation).
+    reuseLastUserMessage: bool = False
     agentId: Optional[str] = None
     model: Optional[str] = None
 

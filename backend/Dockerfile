@@ -2,11 +2,7 @@ FROM python:3.12-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    TRANSFORMERS_CACHE=/root/.cache/huggingface \
-    HF_HOME=/root/.cache/huggingface \
-    # Force CPU-only PyTorch (avoids multi-GB CUDA wheels)
-    TORCH_CUDA_ARCH_LIST=""
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
@@ -26,11 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-
-# Install CPU-only torch first so sentence-transformers does not pull CUDA packages.
-RUN pip install --upgrade pip \
-    && pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1 \
-    && pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 

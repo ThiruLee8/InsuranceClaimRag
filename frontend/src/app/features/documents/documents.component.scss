@@ -59,9 +59,39 @@
   background: #e8eef2;
   color: #345466;
 
-  &--processed { background: #d9f3ea; color: #1f7a5c; }
-  &--processing, &--uploaded { background: #fff1d6; color: #8a6418; }
+  &--completed, &--processed { background: #d9f3ea; color: #1f7a5c; }
+  &--processing, &--uploaded, &--queued,
+  &--extractingtext, &--chunking,
+  &--generatingembeddings, &--indexing { background: #fff1d6; color: #8a6418; }
   &--failed { background: #fde2e2; color: #a33b3b; }
+}
+
+.step {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #5b7383;
+}
+
+.progress {
+  min-width: 140px;
+
+  &__bar {
+    height: 8px;
+    border-radius: 999px;
+    background: #e4eef3;
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2f7d9c, #3db8a0);
+  }
+
+  &__meta {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #5b7383;
+  }
 }
 
 .empty-state, .centered {
