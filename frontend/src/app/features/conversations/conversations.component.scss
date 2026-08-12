@@ -1,0 +1,38 @@
+.page__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: #123246;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: #4d6677;
+  }
+}
+
+.table-wrap {
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(18, 50, 70, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+
+  a {
+    color: #1c6b86;
+    text-decoration: none;
+    font-weight: 600;
+  }
+}
+
+.centered,
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  color: #5b7383;
+}

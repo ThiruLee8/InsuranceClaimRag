@@ -1,0 +1,142 @@
+<section class="page">
+  <header class="page__header">
+    <div>
+      <h1>Documents</h1>
+      <p>Upload insurance claim documents to Azurite and track processing status.</p>
+    </div>
+    <div class="page__actions">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="adminBusy"
+        matTooltip="Remove all embeddings from ChromaDB"
+        (click)="clearVectorStore()"
+      >
+        <mat-icon>delete_sweep</mat-icon>
+        Clear Vector DB
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="adminBusy"
+        matTooltip="Re-index all documents from blob storage"
+        (click)="reprocessAll()"
+      >
+        <mat-icon>sync</mat-icon>
+        Reprocess All
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="adminBusy"
+        matTooltip="Clear vector DB then reprocess everything from blob"
+        (click)="clearAndReprocessAll()"
+      >
+        <mat-icon>restart_alt</mat-icon>
+        Clear &amp; Reprocess
+      </button>
+      <button mat-flat-button color="primary" (click)="showUpload = !showUpload">
+        <mat-icon>upload_file</mat-icon>
+        {{ showUpload ? 'Hide Upload' : 'Upload Document' }}
+      </button>
+    </div>
+  </header>
+
+  @if (showUpload) {
+    <app-document-upload (uploaded)="onUploaded()" />
+  }
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="load()">
+    <mat-form-field appearance="outline">
+      <mat-label>Search</mat-label>
+      <input matInput formControlName="search" placeholder="File name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        @for (status of statuses; track status) {
+          <mat-option [value]="status">{{ status || 'All' }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>File type</mat-label>
+      <mat-select formControlName="contentType">
+        <mat-option value="">All</mat-option>
+        <mat-option value="application/pdf">PDF</mat-option>
+        <mat-option value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">DOCX</mat-option>
+        <mat-option value="text/plain">TXT</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-stroked-button type="submit">Apply</button>
+  </form>
+
+  @if (loading && !documents.length) {
+    <div class="centered"><mat-spinner diameter="40" /></div>
+  } @else if (!documents.length) {
+    <div class="empty-state">
+      <mat-icon>folder_off</mat-icon>
+      <h3>No documents yet</h3>
+      <p>Upload a claim report, policy schedule, or assessment to get started.</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table mat-table [dataSource]="documents" class="docs-table">
+        <ng-container matColumnDef="fileName">
+          <th mat-header-cell *matHeaderCellDef>File Name</th>
+          <td mat-cell *matCellDef="let row">
+            <a [routerLink]="['/documents', row.id]">{{ row.originalFileName }}</a>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let row">{{ row.contentType }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="size">
+          <th mat-header-cell *matHeaderCellDef>Size</th>
+          <td mat-cell *matCellDef="let row">{{ row.fileSize | fileSize }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class]="statusClass(row.status)">{{ row.status }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="uploadedAt">
+          <th mat-header-cell *matHeaderCellDef>Uploaded</th>
+          <td mat-cell *matCellDef="let row">{{ row.uploadedAt | date: 'medium' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="processedAt">
+          <th mat-header-cell *matHeaderCellDef>Processed</th>
+          <td mat-cell *matCellDef="let row">{{ row.processedAt ? (row.processedAt | date: 'medium') : '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let row">
+            <a mat-icon-button [routerLink]="['/documents', row.id]" aria-label="View">
+              <mat-icon>visibility</mat-icon>
+            </a>
+            <button mat-icon-button (click)="reprocess(row)" aria-label="Reprocess">
+              <mat-icon>refresh</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="delete(row)" aria-label="Delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+  }
+</section>

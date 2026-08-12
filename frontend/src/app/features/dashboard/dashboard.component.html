@@ -1,0 +1,92 @@
+<section class="page">
+  <header class="page__header">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Overview of documents, processing status, and conversations.</p>
+    </div>
+    <a mat-flat-button color="primary" routerLink="/documents">Manage Documents</a>
+  </header>
+
+  @if (loading) {
+    <div class="centered"><mat-spinner diameter="42" /></div>
+  } @else if (stats) {
+    <div class="stat-grid">
+      <mat-card class="stat-card">
+        <mat-icon>description</mat-icon>
+        <div>
+          <div class="stat-card__value">{{ stats.totalDocuments }}</div>
+          <div class="stat-card__label">Total Documents</div>
+        </div>
+      </mat-card>
+      <mat-card class="stat-card success">
+        <mat-icon>check_circle</mat-icon>
+        <div>
+          <div class="stat-card__value">{{ stats.processedDocuments }}</div>
+          <div class="stat-card__label">Processed</div>
+        </div>
+      </mat-card>
+      <mat-card class="stat-card warn">
+        <mat-icon>hourglass_top</mat-icon>
+        <div>
+          <div class="stat-card__value">{{ stats.processingDocuments }}</div>
+          <div class="stat-card__label">Processing</div>
+        </div>
+      </mat-card>
+      <mat-card class="stat-card danger">
+        <mat-icon>error</mat-icon>
+        <div>
+          <div class="stat-card__value">{{ stats.failedDocuments }}</div>
+          <div class="stat-card__label">Failed</div>
+        </div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-icon>forum</mat-icon>
+        <div>
+          <div class="stat-card__value">{{ stats.totalConversations }}</div>
+          <div class="stat-card__label">Conversations</div>
+        </div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-icon>help</mat-icon>
+        <div>
+          <div class="stat-card__value">{{ stats.totalQuestions }}</div>
+          <div class="stat-card__label">Questions Asked</div>
+        </div>
+      </mat-card>
+    </div>
+
+    <div class="panels">
+      <mat-card>
+        <h2>Recent Documents</h2>
+        @if (!stats.recentDocuments.length) {
+          <p class="empty">No documents uploaded yet.</p>
+        } @else {
+          <ul>
+            @for (doc of stats.recentDocuments; track doc.id) {
+              <li>
+                <a [routerLink]="['/documents', doc.id]">{{ doc.originalFileName }}</a>
+                <span>{{ doc.status }} · {{ doc.uploadedAt | date: 'medium' }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card>
+
+      <mat-card>
+        <h2>Recent Conversations</h2>
+        @if (!stats.recentConversations.length) {
+          <p class="empty">No conversations yet.</p>
+        } @else {
+          <ul>
+            @for (conv of stats.recentConversations; track conv.id) {
+              <li>
+                <a [routerLink]="['/chat']" [queryParams]="{ c: conv.id }">{{ conv.title }}</a>
+                <span>{{ conv.updatedAt | date: 'medium' }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card>
+    </div>
+  }
+</section>

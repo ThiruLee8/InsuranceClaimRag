@@ -1,0 +1,48 @@
+<section class="page">
+  <a routerLink="/documents" class="back">← Back to documents</a>
+
+  @if (loading) {
+    <div class="centered"><mat-spinner diameter="40" /></div>
+  } @else if (document) {
+    <header class="page__header">
+      <div>
+        <h1>{{ document.originalFileName }}</h1>
+        <p>Status: <strong>{{ document.status }}</strong></p>
+      </div>
+      <div class="actions">
+        <button mat-stroked-button (click)="download()"><mat-icon>download</mat-icon> Download</button>
+        <button mat-stroked-button (click)="reprocess()"><mat-icon>refresh</mat-icon> Reprocess</button>
+        <button mat-stroked-button color="warn" (click)="delete()"><mat-icon>delete</mat-icon> Delete</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <mat-card>
+        <h2>Metadata</h2>
+        <dl>
+          <div><dt>File type</dt><dd>{{ document.contentType }}</dd></div>
+          <div><dt>Size</dt><dd>{{ document.fileSize | fileSize }}</dd></div>
+          <div><dt>Uploaded</dt><dd>{{ document.uploadedAt | date: 'medium' }}</dd></div>
+          <div><dt>Processed</dt><dd>{{ document.processedAt ? (document.processedAt | date: 'medium') : '—' }}</dd></div>
+          <div><dt>Pages</dt><dd>{{ document.pageCount ?? '—' }}</dd></div>
+          <div><dt>Chunks</dt><dd>{{ document.chunkCount ?? 0 }}</dd></div>
+        </dl>
+      </mat-card>
+
+      <mat-card>
+        <h2>Blob Storage</h2>
+        <dl>
+          <div><dt>Container</dt><dd>{{ document.blobContainerName }}</dd></div>
+          <div><dt>Blob name</dt><dd>{{ document.blobName }}</dd></div>
+          <div><dt>Hash</dt><dd class="mono">{{ document.fileHash }}</dd></div>
+        </dl>
+        @if (document.processingError) {
+          <div class="error-box">
+            <h3>Processing error</h3>
+            <p>{{ document.processingError }}</p>
+          </div>
+        }
+      </mat-card>
+    </div>
+  }
+</section>

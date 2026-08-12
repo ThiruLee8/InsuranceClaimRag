@@ -1,0 +1,143 @@
+<section class="chat-layout">
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <div>
+        <h2>Conversations</h2>
+        <p class="sidebar__hint">Select or start a thread</p>
+      </div>
+      <button mat-flat-button color="primary" class="sidebar__new" (click)="newConversation()">
+        <mat-icon>add</mat-icon>
+        New
+      </button>
+    </div>
+
+    @if (loadingConversations) {
+      <div class="centered"><mat-spinner diameter="28" /></div>
+    } @else if (!conversations.length) {
+      <p class="empty">No conversations yet.</p>
+    } @else {
+      <div class="conv-list">
+        @for (conv of conversations; track conv.id) {
+          <button
+            type="button"
+            class="conv-item"
+            [class.active]="conv.id === activeConversationId"
+            (click)="selectConversation(conv.id)"
+          >
+            <div class="conv-item__body">
+              <div class="conv-item__title">{{ conv.title }}</div>
+              <div class="conv-item__meta">{{ conv.updatedAt | date: 'short' }}</div>
+            </div>
+            <div class="conv-item__actions">
+              <button type="button" class="icon-btn" (click)="rename(conv, $event)" aria-label="Rename">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" class="icon-btn" (click)="deleteConversation(conv, $event)" aria-label="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </button>
+        }
+      </div>
+    }
+  </aside>
+
+  <div class="chat-panel">
+    <header class="chat-panel__header">
+      <div>
+        <h1>Insurance Claims Assistant</h1>
+        <p>Ask questions grounded in uploaded claim documents.</p>
+      </div>
+      <div class="chat-panel__controls">
+        <mat-form-field appearance="outline" class="agent-field">
+          <mat-label>Agent</mat-label>
+          <mat-select [(value)]="selectedAgentId">
+            @for (agent of agents; track agent.id) {
+              <mat-option [value]="agent.id">{{ agent.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="agent-field">
+          <mat-label>Model</mat-label>
+          <mat-select [(value)]="selectedModel">
+            @for (model of models; track model) {
+              <mat-option [value]="model">{{ model }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (activeConversationId) {
+          <button mat-stroked-button (click)="clearConversation()">Clear</button>
+        }
+      </div>
+    </header>
+
+    <div class="messages" #messagePane>
+      @if (loadingMessages) {
+        <div class="centered"><mat-spinner diameter="36" /></div>
+      } @else if (!messages.length) {
+        <div class="empty-chat">
+          <mat-icon>chat_bubble_outline</mat-icon>
+          <h3>Start a conversation</h3>
+          <p>Try: “What was the cause of the loss?”</p>
+        </div>
+      } @else {
+        @for (message of messages; track message.id) {
+          <article class="bubble" [class.bubble--user]="message.role === 'user'" [class.bubble--assistant]="message.role === 'assistant'">
+            <div class="bubble__role">{{ message.role === 'user' ? 'You' : 'Assistant' }}</div>
+            @if (message.role === 'assistant') {
+              <div class="markdown" [innerHTML]="message.content | markdown"></div>
+              @if (message.sources.length) {
+                <div class="sources">
+                  <h4>Sources</h4>
+                  @for (source of message.sources; track $index) {
+                    <a
+                      class="source"
+                      [routerLink]="source.documentId ? ['/documents', source.documentId] : null"
+                    >
+                      <mat-icon>description</mat-icon>
+                      <span>
+                        {{ source.fileName || 'Document' }}
+                        @if (source.pageNumber) { · Page {{ source.pageNumber }} }
+                        @if (source.relevanceScore != null) {
+                          · {{ (source.relevanceScore * 100) | number: '1.0-0' }}%
+                        }
+                      </span>
+                    </a>
+                  }
+                </div>
+              }
+              <div class="bubble__actions">
+                <button mat-button type="button" (click)="copyAnswer(message.content)">
+                  <mat-icon>content_copy</mat-icon> Copy
+                </button>
+                <button mat-button type="button" [disabled]="sending" (click)="regenerate(message)">
+                  <mat-icon>refresh</mat-icon> Regenerate
+                </button>
+              </div>
+            } @else {
+              <div>{{ message.content }}</div>
+            }
+          </article>
+        }
+      }
+
+      @if (sending) {
+        <div class="thinking">
+          <mat-spinner diameter="22" />
+          <span>Retrieving documents and generating answer...</span>
+        </div>
+      }
+    </div>
+
+    <form class="composer" [formGroup]="form" (ngSubmit)="send()">
+      <mat-form-field appearance="outline" class="composer__field">
+        <mat-label>Ask a question about the claim documents...</mat-label>
+        <textarea matInput rows="2" formControlName="question" (keydown.enter)="$event.preventDefault(); send()"></textarea>
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || sending">
+        <mat-icon>send</mat-icon>
+        Send
+      </button>
+    </form>
+  </div>
+</section>

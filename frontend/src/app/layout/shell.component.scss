@@ -1,0 +1,124 @@
+.shell {
+  min-height: 100vh;
+  background: transparent;
+  overflow-x: hidden;
+}
+
+.shell__nav {
+  width: 260px;
+  max-width: 260px;
+  background: linear-gradient(180deg, #0f2a3d 0%, #16384f 55%, #1b465f 100%);
+  color: #e8f1f6;
+  border-right: none;
+  padding-top: 0.5rem;
+  overflow-x: hidden !important;
+
+  --mat-list-list-item-label-text-color: #e8f1f6;
+  --mat-list-list-item-leading-icon-color: #b7cbd6;
+  --mat-list-list-item-hover-state-layer-color: rgba(61, 184, 160, 0.16);
+  --mat-list-list-item-focus-state-layer-color: rgba(61, 184, 160, 0.2);
+  --mat-sidenav-container-divider-color: transparent;
+}
+
+.brand {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 1.25rem 1.1rem 1.5rem;
+  min-width: 0;
+}
+
+.brand__mark {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, #3db8a0, #2f7d9c);
+  color: #06202d;
+}
+
+.brand__title {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #f3fafd;
+  white-space: nowrap;
+}
+
+.brand__subtitle {
+  font-size: 0.75rem;
+  color: #9eb6c4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.shell__nav mat-nav-list {
+  padding: 0 0.35rem 1rem;
+  overflow-x: hidden;
+}
+
+a.mat-mdc-list-item {
+  color: #e8f1f6 !important;
+  margin: 0.15rem 0.35rem;
+  border-radius: 10px;
+  overflow: hidden !important;
+
+  .mdc-list-item__content,
+  .mat-mdc-list-item-unscoped-content,
+  span[matListItemTitle],
+  .mdc-list-item__primary-text {
+    color: #e8f1f6 !important;
+  }
+
+  mat-icon {
+    color: #b7cbd6 !important;
+  }
+}
+
+a.mat-mdc-list-item.active {
+  background: rgba(61, 184, 160, 0.2) !important;
+  color: #9be7d5 !important;
+
+  .mdc-list-item__content,
+  .mat-mdc-list-item-unscoped-content,
+  span[matListItemTitle],
+  .mdc-list-item__primary-text,
+  mat-icon {
+    color: #9be7d5 !important;
+  }
+}
+
+.shell__toolbar {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  color: #123246;
+  border-bottom: 1px solid rgba(18, 50, 70, 0.08);
+  font-weight: 500;
+}
+
+.shell__content {
+  padding: 1.5rem;
+  max-width: 1400px;
+  overflow-x: hidden;
+}
+
+:host ::ng-deep .mat-drawer-inner-container {
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 900px) {
+  .shell__nav {
+    width: 220px;
+    max-width: 220px;
+  }
+
+  .shell__content {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,53 @@
+INSURANCE CLAIM INVESTIGATION REPORT
+====================================
+
+Claim Number: CLM-2024-00847
+Policy Number: HO-998877-55
+Insured: Jordan Hale
+Property Address: 412 Maple Avenue, Riverside, CA 92501
+Date of Loss: March 12, 2024
+Date Reported: March 13, 2024
+Investigator: A. Ramirez, Independent Adjuster
+Report Date: March 20, 2024
+
+1. SUMMARY
+----------
+This investigation concerns a residential homeowners claim for sudden water damage.
+The insured reported that a supply line to an upstairs bathroom failed overnight,
+allowing water to travel through the ceiling into the kitchen and living room.
+
+2. CAUSE OF LOSS
+----------------
+The cause of the loss was a burst flexible supply line connected to the upstairs
+bathroom faucet. Corrosion and material fatigue were observed at the failure point.
+There is no indication of gradual seepage prior to the failure date. The loss is
+classified as sudden and accidental water discharge.
+
+3. DAMAGE ASSESSMENT
+--------------------
+Affected areas:
+- Kitchen ceiling and cabinetry
+- Living room hardwood flooring (approx. 180 sq ft)
+- Upstairs bathroom vanity and adjacent drywall
+
+Estimated repair cost from contractor estimate EST-4412: USD 18,450.
+Personal property damaged includes a dining table and electronic equipment totaling
+USD 2,100 based on receipts provided by the insured.
+
+4. COVERAGE ANALYSIS
+--------------------
+Policy HO-998877-55 provides Coverage A (Dwelling) and Coverage C (Personal Property).
+A deductible of USD 1,000 applies. No evidence of excluded causes (flood, neglect, or
+intentional damage) was found during the inspection.
+
+5. RECOMMENDATION
+-----------------
+Recommend approval of covered repairs subject to deductible, pending final review of
+contractor invoices and proof of ownership for personal property items.
+
+6. SUPPORTING DOCUMENTS
+-----------------------
+- Photos of burst supply line and water staining
+- Contractor repair estimate EST-4412
+- Receipts for damaged personal property
+- Incident report filed by insured on March 13, 2024

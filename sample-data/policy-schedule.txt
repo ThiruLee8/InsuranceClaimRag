@@ -1,0 +1,32 @@
+POLICY SCHEDULE - HOMEOWNERS
+============================
+
+Policy Number: HO-998877-55
+Named Insured: Jordan Hale
+Effective Dates: January 1, 2024 - January 1, 2025
+Agency: Riverside Mutual Insurance
+
+Coverages and Limits
+--------------------
+Coverage A - Dwelling: USD 425,000
+Coverage B - Other Structures: USD 42,500
+Coverage C - Personal Property: USD 212,500
+Coverage D - Loss of Use: USD 85,000
+Personal Liability: USD 300,000
+Medical Payments: USD 5,000
+
+Deductibles
+-----------
+All Peril Deductible: USD 1,000
+Wind/Hail Deductible: 1% of Coverage A
+
+Notable Endorsements
+--------------------
+- Water Backup and Sump Overflow: USD 10,000
+- Ordinance or Law: 10% of Coverage A
+- Scheduled Personal Property: none listed
+
+Exclusions (summary)
+--------------------
+Flood, earthquake, intentional loss, neglect, and gradual seepage remain excluded
+except where specifically endorsed.

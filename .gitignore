@@ -1,0 +1,52 @@
+# Environment & secrets
+.env
+*.env.local
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+
+# Node / Angular
+node_modules/
+frontend/dist/
+frontend/.angular/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker volumes (local)
+docker-data/
+
+# Chroma / temp
+backend/.chroma/
+backend/tmp/
+*.tmp
+
+# OS
+Desktop.ini

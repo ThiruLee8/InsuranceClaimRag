@@ -1,0 +1,52 @@
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Manrope,
+    density: 0,
+  ));
+}
+
+:root {
+  --ink: #123246;
+  --muted: #5b7383;
+  --teal: #3db8a0;
+  --navy: #0f2a3d;
+  --surface: #f3f7f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+  font-family: Manrope, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(61, 184, 160, 0.18), transparent 34%),
+    radial-gradient(circle at 88% 0%, rgba(47, 125, 156, 0.16), transparent 32%),
+    linear-gradient(160deg, #eef4f7 0%, #f7fafb 45%, #e9f1f4 100%);
+}
+
+a {
+  color: inherit;
+}
+
+.snack-success {
+  --mdc-snackbar-container-color: #1f7a5c;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+
+.snack-error {
+  --mdc-snackbar-container-color: #a33b3b;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
