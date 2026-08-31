@@ -31,8 +31,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY document_processor/requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip \
     && pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1 \
-    && pip install -r /tmp/requirements.txt
-
+    && pip install -r /tmp/requirements.txt \
+    && pip install --force-reinstall --no-deps "protobuf==5.29.5" "googleapis-common-protos==1.66.0"
 COPY document_processor/ /home/site/wwwroot/
 
 # Ensure package imports resolve for shared/services/models/repositories

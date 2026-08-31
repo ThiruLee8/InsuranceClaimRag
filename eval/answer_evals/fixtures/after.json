@@ -1,0 +1,110 @@
+{
+  "description": "AFTER fixtures — same questions with retrieval/generation fixes applied (hybrid + precise answers).",
+  "items": [
+    {
+      "id": "reg-property-address",
+      "answer": "The property address is 412 Maple Avenue, Riverside, CA 92501.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "Property Address: 412 Maple Avenue, Riverside, CA 92501"
+        }
+      ]
+    },
+    {
+      "id": "reg-claim-about",
+      "answer": "Claim CLM-2024-00847 is a residential homeowners claim for sudden water damage from a burst flexible supply line.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "Claim Number: CLM-2024-00847. Cause of loss was a burst flexible supply line."
+        }
+      ]
+    },
+    {
+      "id": "reg-net-settlement-exact",
+      "answer": "The net settlement amount is USD 19,550.",
+      "retrieved": [
+        {
+          "fileName": "claim-settlement-letter.txt",
+          "content": "Net settlement: USD 19,550."
+        }
+      ]
+    },
+    {
+      "id": "reg-deductible-amount",
+      "answer": "The All Peril Deductible is USD 1,000.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "All Peril Deductible: USD 1,000."
+        }
+      ]
+    },
+    {
+      "id": "reg-damage-cost-range",
+      "answer": "The preliminary cost range in the damage assessment is USD 16,800 - USD 19,200.",
+      "retrieved": [
+        {
+          "fileName": "damage-assessment-report.txt",
+          "content": "Preliminary Cost Range: USD 16,800 - USD 19,200"
+        }
+      ]
+    },
+    {
+      "id": "reg-messy-payout",
+      "answer": "After the deductible, the net payout for the water claim is USD 19,550.",
+      "retrieved": [
+        {
+          "fileName": "claim-settlement-letter.txt",
+          "content": "Less deductible: USD 1,000. Net settlement: USD 19,550."
+        }
+      ]
+    },
+    {
+      "id": "reg-investigator-no-hallucination",
+      "answer": "The claim was investigated by A. Ramirez, Independent Adjuster.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "Investigator: A. Ramirez, Independent Adjuster."
+        }
+      ]
+    },
+    {
+      "id": "ok-cause-of-loss",
+      "answer": "The cause of the loss was a burst flexible supply line on the upstairs bathroom faucet.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "The cause of the loss was a burst flexible supply line connected to the upstairs bathroom faucet."
+        }
+      ]
+    },
+    {
+      "id": "ok-dwelling-limit",
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "Coverage A - Dwelling: USD 425,000"
+        }
+      ]
+    },
+    {
+      "id": "ok-water-backup",
+      "answer": "Yes. The Water Backup and Sump Overflow endorsement limit is USD 10,000.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "Water Backup and Sump Overflow: USD 10,000"
+        }
+      ]
+    },
+    {
+      "id": "assert-refuse-no-docs",
+      "answer": "I could not find sufficient information in the provided documents.",
+      "retrieved": []
+    }
+  ]
+}

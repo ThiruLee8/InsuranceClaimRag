@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "timestamp": "2026-08-31T14:53:46.361336+00:00",
+    "model": "llama3.2",
+    "offline": true,
+    "min_agreement": 0.7
+  },
+  "agreement": {
+    "n": 5,
+    "accuracy": 1.0,
+    "tp": 2,
+    "tn": 3,
+    "fp": 0,
+    "fn": 0
+  },
+  "items": [
+    {
+      "id": "human-faithful-good",
+      "human_pass": true,
+      "judge_pass": true,
+      "agree": true,
+      "human_note": "Exact figure from context; answers the question.",
+      "judge": {
+        "enabled": true,
+        "passed": true,
+        "score": 1.0,
+        "criteria": [
+          {
+            "criterion": "offline",
+            "pass": true,
+            "score": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "human-hallucination",
+      "human_pass": false,
+      "judge_pass": false,
+      "agree": true,
+      "human_note": "Invented M. Chen; context says Ramirez.",
+      "judge": {
+        "enabled": true,
+        "passed": false,
+        "score": 0.2,
+        "criteria": [
+          {
+            "criterion": "offline",
+            "pass": false,
+            "score": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "human-vague",
+      "human_pass": false,
+      "judge_pass": false,
+      "agree": true,
+      "human_note": "Fails to state the amount the user asked for.",
+      "judge": {
+        "enabled": true,
+        "passed": false,
+        "score": 0.2,
+        "criteria": [
+          {
+            "criterion": "offline",
+            "pass": false,
+            "score": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "human-relevant-good",
+      "human_pass": true,
+      "judge_pass": true,
+      "agree": true,
+      "human_note": "Faithful and on-topic.",
+      "judge": {
+        "enabled": true,
+        "passed": true,
+        "score": 1.0,
+        "criteria": [
+          {
+            "criterion": "offline",
+            "pass": true,
+            "score": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "human-unfaithful-number",
+      "human_pass": false,
+      "judge_pass": false,
+      "agree": true,
+      "human_note": "Wrong number not in context.",
+      "judge": {
+        "enabled": true,
+        "passed": false,
+        "score": 0.2,
+        "criteria": [
+          {
+            "criterion": "offline",
+            "pass": false,
+            "score": 2
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "createdAt": "2026-08-20T12:00:00+00:00",
+    "source": "eval/error_analysis/traces/traces.jsonl",
+    "poolSize": 10,
+    "sampleSize": 10,
+    "seed": 42,
+    "instructions": "Open-code notes were written BEFORE problem_type labels. Severity 1=minor, 2=hurts usefulness, 3=wrong/blocking."
+  },
+  "items": [
+    {
+      "traceId": "seed-001-wrong-doc",
+      "question": "What is the property address at 412 Maple Avenue?",
+      "searchQuery": "What is the property address at 412 Maple Avenue?",
+      "searchMode": "semantic",
+      "retrieved": [
+        {
+          "rank": 1,
+          "fileName": "damage-assessment-report.txt",
+          "content": "Water migrated from the second-floor bathroom..."
+        }
+      ],
+      "answer": "The documents mention Jordan Hale in Riverside but do not clearly state a street address for the loss location.",
+      "ok": false,
+      "open_code_note": "Right address is in the investigation report, but retrieval returned damage/policy chunks that never mention 412 Maple, so the model said it was missing.",
+      "severity": 3,
+      "problem_type": "wrong_document_retrieved"
+    },
+    {
+      "traceId": "seed-002-wrong-doc",
+      "question": "What is claim number CLM-2024-00847 about?",
+      "answer": "Claim CLM-2024-00847 is a water damage claim that settled for USD 19,550 after deductible.",
+      "ok": false,
+      "open_code_note": "Fetched the settlement letter (has the claim ID) instead of the investigation summary, so the answer skips cause-of-loss detail the user likely wanted.",
+      "severity": 2,
+      "problem_type": "wrong_document_retrieved"
+    },
+    {
+      "traceId": "seed-003-gen-miss",
+      "question": "What is the net settlement amount?",
+      "answer": "The settlement is about twenty thousand dollars.",
+      "ok": false,
+      "open_code_note": "Correct settlement letter chunk with exact USD 19,550 was retrieved, but the answer rounded vaguely instead of citing the net figure.",
+      "severity": 2,
+      "problem_type": "vague_or_imprecise_answer"
+    },
+    {
+      "traceId": "seed-004-ok",
+      "question": "What was the cause of the loss?",
+      "answer": "The cause of the loss was a burst flexible supply line on the upstairs bathroom faucet.",
+      "ok": true,
+      "open_code_note": "",
+      "severity": null,
+      "problem_type": ""
+    },
+    {
+      "traceId": "seed-005-gen-omit",
+      "question": "What deductible applies?",
+      "answer": "A deductible applies under the policy.",
+      "ok": false,
+      "open_code_note": "Policy schedule with USD 1,000 All Peril Deductible was in context, but the answer never states the amount.",
+      "severity": 3,
+      "problem_type": "omits_key_number_from_context"
+    },
+    {
+      "traceId": "seed-006-wrong-doc",
+      "question": "What is the preliminary cost range in the damage assessment?",
+      "answer": "The estimated repair cost is USD 18,450 from contractor estimate EST-4412.",
+      "ok": false,
+      "open_code_note": "Asked for damage-assessment range (16,800–19,200) but got investigation estimate 18,450 instead — wrong document family.",
+      "severity": 3,
+      "problem_type": "wrong_document_retrieved"
+    },
+    {
+      "traceId": "seed-007-messy-q",
+      "question": "hey can u tell me how much they actually paid out after the deductible thing for that water claim?",
+      "answer": "There is a USD 1,000 deductible and about USD 2,100 in personal property damage.",
+      "ok": false,
+      "open_code_note": "Messy payout question; search kept the chatty wording and retrieved investigation deductible text, missing the settlement net 19,550.",
+      "severity": 3,
+      "problem_type": "messy_query_hurts_retrieval"
+    },
+    {
+      "traceId": "seed-008-ok",
+      "question": "What is the Coverage A dwelling limit?",
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "ok": true,
+      "open_code_note": "",
+      "severity": null,
+      "problem_type": ""
+    },
+    {
+      "traceId": "seed-009-gen-halluc",
+      "question": "Who investigated claim CLM-2024-00847?",
+      "answer": "The claim was investigated by field surveyor M. Chen.",
+      "ok": false,
+      "open_code_note": "Retrieved chunk correctly names A. Ramirez, but the answer invents M. Chen (damage assessor) — generation hallucination with right context present.",
+      "severity": 3,
+      "problem_type": "hallucinated_despite_context"
+    },
+    {
+      "traceId": "seed-010-ok",
+      "question": "Is there a Water Backup and Sump Overflow endorsement limit?",
+      "answer": "Yes. The Water Backup and Sump Overflow endorsement limit is USD 10,000.",
+      "ok": true,
+      "open_code_note": "",
+      "severity": null,
+      "problem_type": ""
+    }
+  ]
+}

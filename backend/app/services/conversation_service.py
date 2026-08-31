@@ -22,6 +22,7 @@ from app.schemas import (
     RetrieveResponse,
 )
 from app.services.rag_service import RAGService
+from app.services.trace_service import get_trace_service
 
 logger = get_logger(__name__)
 
@@ -226,6 +227,33 @@ class ConversationService:
         conversation.UpdatedAt = datetime.now(timezone.utc)
         self.repo.update(conversation)
 
+        # Complete trace for error analysis (always includes chunk text).
+        try:
+            get_trace_service().record(
+                question=payload.question,
+                answer=result.answer,
+                sources=[
+                    {
+                        "documentId": hit.document_id,
+                        "chunkId": hit.chunk_id,
+                        "fileName": hit.file_name,
+                        "pageNumber": hit.page_number,
+                        "score": hit.score,
+                        "content": hit.content,
+                    }
+                    for hit in result.sources
+                ],
+                conversation_id=str(conversation.Id),
+                message_id=str(assistant_message.Id),
+                agent_id=result.agent_id,
+                model=result.model,
+                original_question=result.original_question,
+                search_query=result.search_query,
+                search_mode=result.search_mode,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("trace_record_failed", error=str(exc))
+
         logger.info(
             "chat_completed",
             conversation_id=str(conversation.Id),
@@ -341,6 +369,32 @@ class ConversationService:
                 )
             conversation.UpdatedAt = datetime.now(timezone.utc)
             self.repo.update(conversation)
+
+            try:
+                get_trace_service().record(
+                    question=payload.question,
+                    answer=answer,
+                    sources=[
+                        {
+                            "documentId": hit.document_id,
+                            "chunkId": hit.chunk_id,
+                            "fileName": hit.file_name,
+                            "pageNumber": hit.page_number,
+                            "score": hit.score,
+                            "content": hit.content,
+                        }
+                        for hit in hits
+                    ],
+                    conversation_id=str(conversation.Id),
+                    message_id=str(assistant_message.Id),
+                    agent_id=agent_id,
+                    model=model_name,
+                    original_question=str(original_question or payload.question),
+                    search_query=str(search_query or payload.question),
+                    search_mode=str(search_mode) if search_mode else None,
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("trace_record_failed", error=str(exc))
 
             logger.info(
                 "chat_stream_completed",

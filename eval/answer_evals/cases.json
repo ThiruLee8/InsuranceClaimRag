@@ -1,0 +1,154 @@
+{
+  "description": "Answer eval set — Week 5 failures turned into permanent regression tests, plus healthy baselines. Rule assertions first; LLM judge optional for faithfulness/relevancy.",
+  "version": 1,
+  "cases": [
+    {
+      "id": "reg-property-address",
+      "question": "What is the property address at 412 Maple Avenue?",
+      "problem_type": "wrong_document_retrieved",
+      "source": "week5_failure",
+      "expected_document": "claim-investigation-report",
+      "assertions": {
+        "must_have_sources": true,
+        "retrieved_must_include_document": "claim-investigation-report",
+        "answer_must_contain_any": ["412 Maple", "Maple Avenue", "92501"],
+        "answer_must_not_contain_any": ["do not clearly state", "not clearly stated", "cannot find the address"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness", "answer_relevancy"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "reg-claim-about",
+      "question": "What is claim number CLM-2024-00847 about?",
+      "problem_type": "wrong_document_retrieved",
+      "source": "week5_failure",
+      "expected_document": "claim-investigation-report",
+      "assertions": {
+        "must_have_sources": true,
+        "retrieved_must_include_document": "claim-investigation-report",
+        "answer_must_contain_any": ["burst", "supply line", "water"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness", "answer_relevancy"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "reg-net-settlement-exact",
+      "question": "What is the net settlement amount?",
+      "problem_type": "vague_or_imprecise_answer",
+      "source": "week5_failure",
+      "expected_document": "claim-settlement-letter",
+      "assertions": {
+        "must_have_sources": true,
+        "retrieved_must_include_document": "claim-settlement-letter",
+        "answer_must_contain_any": ["19,550", "19550"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness", "answer_relevancy"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "reg-deductible-amount",
+      "question": "What deductible applies?",
+      "problem_type": "omits_key_number_from_context",
+      "source": "week5_failure",
+      "expected_document": "policy-schedule",
+      "assertions": {
+        "must_have_sources": true,
+        "answer_must_contain_any": ["1,000", "1000"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness", "answer_relevancy"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "reg-damage-cost-range",
+      "question": "What is the preliminary cost range in the damage assessment?",
+      "problem_type": "wrong_document_retrieved",
+      "source": "week5_failure",
+      "expected_document": "damage-assessment-report",
+      "assertions": {
+        "must_have_sources": true,
+        "retrieved_must_include_document": "damage-assessment-report",
+        "answer_must_contain_any": ["16,800", "19,200", "16800", "19200"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness", "answer_relevancy"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "reg-messy-payout",
+      "question": "hey can u tell me how much they actually paid out after the deductible thing for that water claim?",
+      "problem_type": "messy_query_hurts_retrieval",
+      "source": "week5_failure",
+      "expected_document": "claim-settlement-letter",
+      "assertions": {
+        "must_have_sources": true,
+        "retrieved_must_include_document": "claim-settlement-letter",
+        "answer_must_contain_any": ["19,550", "19550"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness", "answer_relevancy"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "reg-investigator-no-hallucination",
+      "question": "Who investigated claim CLM-2024-00847?",
+      "problem_type": "hallucinated_despite_context",
+      "source": "week5_failure",
+      "expected_document": "claim-investigation-report",
+      "assertions": {
+        "must_have_sources": true,
+        "answer_must_contain_any": ["Ramirez"],
+        "answer_must_not_contain_any": ["M. Chen", "M Chen", "Chen"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "ok-cause-of-loss",
+      "question": "What was the cause of the loss?",
+      "problem_type": "baseline_ok",
+      "source": "week5_ok",
+      "expected_document": "claim-investigation-report",
+      "assertions": {
+        "must_have_sources": true,
+        "answer_must_contain_any": ["burst", "supply line"]
+      },
+      "judge": { "enabled": true, "criteria": ["faithfulness", "answer_relevancy"], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "ok-dwelling-limit",
+      "question": "What is the Coverage A dwelling limit?",
+      "problem_type": "baseline_ok",
+      "source": "week5_ok",
+      "expected_document": "policy-schedule",
+      "assertions": {
+        "must_have_sources": true,
+        "answer_must_contain_any": ["425,000", "425000"]
+      },
+      "judge": { "enabled": false, "criteria": [], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "ok-water-backup",
+      "question": "Is there a Water Backup and Sump Overflow endorsement limit?",
+      "problem_type": "baseline_ok",
+      "source": "week5_ok",
+      "expected_document": "policy-schedule",
+      "assertions": {
+        "must_have_sources": true,
+        "answer_must_contain_any": ["10,000", "10000"]
+      },
+      "judge": { "enabled": false, "criteria": [], "pass_threshold": 0.7 }
+    },
+    {
+      "id": "assert-refuse-no-docs",
+      "question": "What is the secret nuclear launch code for claim ZZZ-999?",
+      "problem_type": "should_refuse_or_insufficient",
+      "source": "synthetic",
+      "expected_document": null,
+      "assertions": {
+        "must_have_sources": false,
+        "answer_must_contain_any": [
+          "could not find",
+          "insufficient",
+          "not find",
+          "no information",
+          "don't have",
+          "do not have",
+          "not in the",
+          "provided documents"
+        ]
+      },
+      "judge": { "enabled": false, "criteria": [], "pass_threshold": 0.7 }
+    }
+  ]
+}

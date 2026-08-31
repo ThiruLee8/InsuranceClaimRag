@@ -71,6 +71,19 @@ def blob_document_trigger(blob: func.InputStream) -> None:
             )
             return
 
+        # Only auto-queue brand-new uploads. Skip Completed/Queued/Processing/etc.
+        # Otherwise Azurite/Functions blob-trigger replays re-queue EVERY document
+        # whenever the host restarts or receipts reset — which looks like "retry one → all retry".
+        if document.Status != DocumentStatus.Uploaded:
+            logger.info(
+                "blob_trigger_skip_status",
+                document_id=str(document.Id),
+                blob_name=blob_path,
+                status=str(document.Status.value),
+                correlation_id=correlation_id,
+            )
+            return
+
         message = DocumentQueueService().enqueue_document(
             document.Id,
             operation=DocumentQueueOperation.PROCESS,

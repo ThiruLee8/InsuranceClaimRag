@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.routes import agents, chat, conversations, documents, documents_ws, health
+from app.api.routes import agents, chat, conversations, documents, documents_ws, health, traces
 from app.db.database import get_db
 from app.db.models import DocumentStatus, MessageRole
 from app.db.repositories import ConversationRepository, DocumentRepository
@@ -14,6 +14,7 @@ router.include_router(documents.router)
 router.include_router(documents_ws.router)
 router.include_router(conversations.router)
 router.include_router(chat.router)
+router.include_router(traces.router)
 
 
 @router.get("/dashboard", response_model=ApiResponse[DashboardStats])

@@ -1,0 +1,80 @@
+{
+  "description": "Human labels for LLM-as-judge validation. Grade these yourself first; then check the judge agrees.",
+  "items": [
+    {
+      "id": "human-faithful-good",
+      "question": "What is the net settlement amount?",
+      "answer": "The net settlement is USD 19,550.",
+      "retrieved": [
+        {
+          "fileName": "claim-settlement-letter.txt",
+          "content": "Gross payable: USD 20,550. Less deductible: USD 1,000. Net settlement: USD 19,550."
+        }
+      ],
+      "criteria": ["faithfulness", "answer_relevancy"],
+      "human_pass": true,
+      "human_note": "Exact figure from context; answers the question.",
+      "expected_judge_pass": true
+    },
+    {
+      "id": "human-hallucination",
+      "question": "Who investigated claim CLM-2024-00847?",
+      "answer": "The claim was investigated by field surveyor M. Chen.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "Investigator: A. Ramirez, Independent Adjuster."
+        }
+      ],
+      "criteria": ["faithfulness"],
+      "human_pass": false,
+      "human_note": "Invented M. Chen; context says Ramirez.",
+      "expected_judge_pass": false
+    },
+    {
+      "id": "human-vague",
+      "question": "What deductible applies?",
+      "answer": "A deductible applies under the policy.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "All Peril Deductible: USD 1,000."
+        }
+      ],
+      "criteria": ["answer_relevancy"],
+      "human_pass": false,
+      "human_note": "Fails to state the amount the user asked for.",
+      "expected_judge_pass": false
+    },
+    {
+      "id": "human-relevant-good",
+      "question": "What was the cause of the loss?",
+      "answer": "A burst flexible supply line on the upstairs bathroom faucet caused sudden water damage.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "The cause of the loss was a burst flexible supply line connected to the upstairs bathroom faucet."
+        }
+      ],
+      "criteria": ["faithfulness", "answer_relevancy"],
+      "human_pass": true,
+      "human_note": "Faithful and on-topic.",
+      "expected_judge_pass": true
+    },
+    {
+      "id": "human-unfaithful-number",
+      "question": "What is the Coverage A dwelling limit?",
+      "answer": "Coverage A is USD 500,000.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "Coverage A - Dwelling: USD 425,000"
+        }
+      ],
+      "criteria": ["faithfulness"],
+      "human_pass": false,
+      "human_note": "Wrong number not in context.",
+      "expected_judge_pass": false
+    }
+  ]
+}

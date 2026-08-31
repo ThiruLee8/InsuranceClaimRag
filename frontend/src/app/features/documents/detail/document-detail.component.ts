@@ -85,9 +85,13 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   reprocess(): void {
     if (!this.document) return;
     const id = this.document.id;
-    this.documentService.process(id).subscribe({
+    const name = this.document.originalFileName;
+    if (!confirm(`Reprocess only "${name}"?\n\nOther documents will not be queued.`)) {
+      return;
+    }
+    this.documentService.reprocess(id).subscribe({
       next: () => {
-        this.notifications.success('Document queued for processing');
+        this.notifications.success(`Queued "${name}" for reprocessing`);
         this.watch(id);
       },
     });

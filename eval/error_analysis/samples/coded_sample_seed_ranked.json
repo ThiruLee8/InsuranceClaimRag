@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "createdAt": "2026-08-31T12:39:00.490013+00:00",
+    "samplePath": "eval\\error_analysis\\samples\\coded_sample_seed.json",
+    "sampleSize": 10,
+    "okCount": 3,
+    "failCount": 7,
+    "codedFailures": 7,
+    "uncodedFailures": 0
+  },
+  "ranked_problems": [
+    {
+      "problem_type": "wrong_document_retrieved",
+      "frequency": 3,
+      "mean_severity": 2.67,
+      "impact_score": 8.0,
+      "example_notes": [
+        "Right address is in the investigation report, but retrieval returned damage/policy chunks that never mention 412 Maple, so the model said it was missing.",
+        "Fetched the settlement letter (has the claim ID) instead of the investigation summary, so the answer skips cause-of-loss detail the user likely wanted.",
+        "Asked for damage-assessment range (16,800–19,200) but got investigation estimate 18,450 instead — wrong document family."
+      ],
+      "trace_ids": [
+        "seed-001-wrong-doc",
+        "seed-002-wrong-doc",
+        "seed-006-wrong-doc"
+      ]
+    },
+    {
+      "problem_type": "hallucinated_despite_context",
+      "frequency": 1,
+      "mean_severity": 3.0,
+      "impact_score": 3.0,
+      "example_notes": [
+        "Retrieved chunk correctly names A. Ramirez, but the answer invents M. Chen (damage assessor) — generation hallucination with right context present."
+      ],
+      "trace_ids": [
+        "seed-009-gen-halluc"
+      ]
+    },
+    {
+      "problem_type": "messy_query_hurts_retrieval",
+      "frequency": 1,
+      "mean_severity": 3.0,
+      "impact_score": 3.0,
+      "example_notes": [
+        "Messy payout question; search kept the chatty wording and retrieved investigation deductible text, missing the settlement net 19,550."
+      ],
+      "trace_ids": [
+        "seed-007-messy-q"
+      ]
+    },
+    {
+      "problem_type": "omits_key_number_from_context",
+      "frequency": 1,
+      "mean_severity": 3.0,
+      "impact_score": 3.0,
+      "example_notes": [
+        "Policy schedule with USD 1,000 All Peril Deductible was in context, but the answer never states the amount."
+      ],
+      "trace_ids": [
+        "seed-005-gen-omit"
+      ]
+    },
+    {
+      "problem_type": "vague_or_imprecise_answer",
+      "frequency": 1,
+      "mean_severity": 2.0,
+      "impact_score": 2.0,
+      "example_notes": [
+        "Correct settlement letter chunk with exact USD 19,550 was retrieved, but the answer rounded vaguely instead of citing the net figure."
+      ],
+      "trace_ids": [
+        "seed-003-gen-miss"
+      ]
+    }
+  ],
+  "chosen_fix_target": "wrong_document_retrieved"
+}

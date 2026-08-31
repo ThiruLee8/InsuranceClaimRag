@@ -1,0 +1,455 @@
+{
+  "summary": {
+    "label": "before",
+    "timestamp": "2026-08-31T14:53:43.711431+00:00",
+    "mode": "fixtures",
+    "judge": false,
+    "n": 11,
+    "pass_rate": 0.36363636363636365,
+    "mean_score": 0.6136363636363636,
+    "assertion_pass_rate": 0.36363636363636365,
+    "mean_context_recall": 0.6,
+    "mean_context_precision": 0.6,
+    "by_problem_type": {
+      "wrong_document_retrieved": {
+        "n": 3,
+        "pass_rate": 0.0,
+        "mean_score": 0.3055555555555555
+      },
+      "vague_or_imprecise_answer": {
+        "n": 1,
+        "pass_rate": 0.0,
+        "mean_score": 0.6666666666666666
+      },
+      "omits_key_number_from_context": {
+        "n": 1,
+        "pass_rate": 0.0,
+        "mean_score": 0.5
+      },
+      "messy_query_hurts_retrieval": {
+        "n": 1,
+        "pass_rate": 0.0,
+        "mean_score": 0.3333333333333333
+      },
+      "hallucinated_despite_context": {
+        "n": 1,
+        "pass_rate": 0.0,
+        "mean_score": 0.3333333333333333
+      },
+      "baseline_ok": {
+        "n": 3,
+        "pass_rate": 1.0,
+        "mean_score": 1.0
+      },
+      "should_refuse_or_insufficient": {
+        "n": 1,
+        "pass_rate": 1.0,
+        "mean_score": 1.0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "reg-property-address",
+      "problem_type": "wrong_document_retrieved",
+      "source": "week5_failure",
+      "passed": false,
+      "score": 0.25,
+      "assertions": {
+        "passed": false,
+        "score": 0.25,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "retrieved_must_include_document",
+            "passed": false,
+            "detail": "expected=claim-investigation-report; files=['damage-assessment-report.txt']"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": false,
+            "detail": "needles=['412 Maple', 'Maple Avenue', '92501']"
+          },
+          {
+            "name": "answer_must_not_contain_any",
+            "passed": false,
+            "detail": "forbidden=['do not clearly state', 'not clearly stated', 'cannot find the address']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 0.0,
+      "context_precision": 0.0,
+      "answer": "The documents mention Jordan Hale in Riverside but do not clearly state a street address for the loss location.",
+      "retrieved_files": [
+        "damage-assessment-report.txt"
+      ]
+    },
+    {
+      "id": "reg-claim-about",
+      "problem_type": "wrong_document_retrieved",
+      "source": "week5_failure",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "assertions": {
+        "passed": false,
+        "score": 0.3333333333333333,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "retrieved_must_include_document",
+            "passed": false,
+            "detail": "expected=claim-investigation-report; files=['claim-settlement-letter.txt']"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": false,
+            "detail": "needles=['burst', 'supply line', 'water']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 0.0,
+      "context_precision": 0.0,
+      "answer": "Claim CLM-2024-00847 settled for USD 19,550 after deductible.",
+      "retrieved_files": [
+        "claim-settlement-letter.txt"
+      ]
+    },
+    {
+      "id": "reg-net-settlement-exact",
+      "problem_type": "vague_or_imprecise_answer",
+      "source": "week5_failure",
+      "passed": false,
+      "score": 0.6666666666666666,
+      "assertions": {
+        "passed": false,
+        "score": 0.6666666666666666,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "retrieved_must_include_document",
+            "passed": true,
+            "detail": "expected=claim-settlement-letter; files=['claim-settlement-letter.txt']"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": false,
+            "detail": "needles=['19,550', '19550']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer": "The settlement is about twenty thousand dollars.",
+      "retrieved_files": [
+        "claim-settlement-letter.txt"
+      ]
+    },
+    {
+      "id": "reg-deductible-amount",
+      "problem_type": "omits_key_number_from_context",
+      "source": "week5_failure",
+      "passed": false,
+      "score": 0.5,
+      "assertions": {
+        "passed": false,
+        "score": 0.5,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": false,
+            "detail": "needles=['1,000', '1000']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer": "A deductible applies under the policy.",
+      "retrieved_files": [
+        "policy-schedule.txt"
+      ]
+    },
+    {
+      "id": "reg-damage-cost-range",
+      "problem_type": "wrong_document_retrieved",
+      "source": "week5_failure",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "assertions": {
+        "passed": false,
+        "score": 0.3333333333333333,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "retrieved_must_include_document",
+            "passed": false,
+            "detail": "expected=damage-assessment-report; files=['claim-investigation-report.txt']"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": false,
+            "detail": "needles=['16,800', '19,200', '16800', '19200']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 0.0,
+      "context_precision": 0.0,
+      "answer": "The estimated repair cost is USD 18,450 from contractor estimate EST-4412.",
+      "retrieved_files": [
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "reg-messy-payout",
+      "problem_type": "messy_query_hurts_retrieval",
+      "source": "week5_failure",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "assertions": {
+        "passed": false,
+        "score": 0.3333333333333333,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "retrieved_must_include_document",
+            "passed": false,
+            "detail": "expected=claim-settlement-letter; files=['claim-investigation-report.txt']"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": false,
+            "detail": "needles=['19,550', '19550']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 0.0,
+      "context_precision": 0.0,
+      "answer": "There is a USD 1,000 deductible and about USD 2,100 in personal property damage.",
+      "retrieved_files": [
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "reg-investigator-no-hallucination",
+      "problem_type": "hallucinated_despite_context",
+      "source": "week5_failure",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "assertions": {
+        "passed": false,
+        "score": 0.3333333333333333,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": false,
+            "detail": "needles=['Ramirez']"
+          },
+          {
+            "name": "answer_must_not_contain_any",
+            "passed": false,
+            "detail": "forbidden=['M. Chen', 'M Chen', 'Chen']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer": "The claim was investigated by field surveyor M. Chen.",
+      "retrieved_files": [
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "ok-cause-of-loss",
+      "problem_type": "baseline_ok",
+      "source": "week5_ok",
+      "passed": true,
+      "score": 1.0,
+      "assertions": {
+        "passed": true,
+        "score": 1.0,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": true,
+            "detail": "needles=['burst', 'supply line']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer": "The cause of the loss was a burst flexible supply line on the upstairs bathroom faucet.",
+      "retrieved_files": [
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "ok-dwelling-limit",
+      "problem_type": "baseline_ok",
+      "source": "week5_ok",
+      "passed": true,
+      "score": 1.0,
+      "assertions": {
+        "passed": true,
+        "score": 1.0,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": true,
+            "detail": "needles=['425,000', '425000']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "retrieved_files": [
+        "policy-schedule.txt"
+      ]
+    },
+    {
+      "id": "ok-water-backup",
+      "problem_type": "baseline_ok",
+      "source": "week5_ok",
+      "passed": true,
+      "score": 1.0,
+      "assertions": {
+        "passed": true,
+        "score": 1.0,
+        "checks": [
+          {
+            "name": "must_have_sources",
+            "passed": true,
+            "detail": "retrieved=1"
+          },
+          {
+            "name": "answer_must_contain_any",
+            "passed": true,
+            "detail": "needles=['10,000', '10000']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer": "Yes. The Water Backup and Sump Overflow endorsement limit is USD 10,000.",
+      "retrieved_files": [
+        "policy-schedule.txt"
+      ]
+    },
+    {
+      "id": "assert-refuse-no-docs",
+      "problem_type": "should_refuse_or_insufficient",
+      "source": "synthetic",
+      "passed": true,
+      "score": 1.0,
+      "assertions": {
+        "passed": true,
+        "score": 1.0,
+        "checks": [
+          {
+            "name": "answer_must_contain_any",
+            "passed": true,
+            "detail": "needles=['could not find', 'insufficient', 'not find', 'no information', \"don't have\", 'do not have', 'not in the', 'provided documents']"
+          }
+        ]
+      },
+      "judge": {
+        "enabled": false,
+        "passed": true,
+        "score": null
+      },
+      "context_recall": null,
+      "context_precision": null,
+      "answer": "I could not find sufficient information in the provided documents.",
+      "retrieved_files": []
+    }
+  ]
+}

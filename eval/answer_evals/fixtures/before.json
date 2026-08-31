@@ -1,0 +1,110 @@
+{
+  "description": "BEFORE fixtures — answers/retrieval mirroring Week 5 failure modes (for offline scoring).",
+  "items": [
+    {
+      "id": "reg-property-address",
+      "answer": "The documents mention Jordan Hale in Riverside but do not clearly state a street address for the loss location.",
+      "retrieved": [
+        {
+          "fileName": "damage-assessment-report.txt",
+          "content": "Water migrated from the second-floor bathroom through ceiling cavities."
+        }
+      ]
+    },
+    {
+      "id": "reg-claim-about",
+      "answer": "Claim CLM-2024-00847 settled for USD 19,550 after deductible.",
+      "retrieved": [
+        {
+          "fileName": "claim-settlement-letter.txt",
+          "content": "Re: Claim CLM-2024-00847. Net settlement: USD 19,550."
+        }
+      ]
+    },
+    {
+      "id": "reg-net-settlement-exact",
+      "answer": "The settlement is about twenty thousand dollars.",
+      "retrieved": [
+        {
+          "fileName": "claim-settlement-letter.txt",
+          "content": "Net settlement: USD 19,550."
+        }
+      ]
+    },
+    {
+      "id": "reg-deductible-amount",
+      "answer": "A deductible applies under the policy.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "All Peril Deductible: USD 1,000."
+        }
+      ]
+    },
+    {
+      "id": "reg-damage-cost-range",
+      "answer": "The estimated repair cost is USD 18,450 from contractor estimate EST-4412.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "Estimated repair cost from contractor estimate EST-4412: USD 18,450."
+        }
+      ]
+    },
+    {
+      "id": "reg-messy-payout",
+      "answer": "There is a USD 1,000 deductible and about USD 2,100 in personal property damage.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "A deductible of USD 1,000 applies. Personal property damaged totals USD 2,100."
+        }
+      ]
+    },
+    {
+      "id": "reg-investigator-no-hallucination",
+      "answer": "The claim was investigated by field surveyor M. Chen.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "Investigator: A. Ramirez, Independent Adjuster."
+        }
+      ]
+    },
+    {
+      "id": "ok-cause-of-loss",
+      "answer": "The cause of the loss was a burst flexible supply line on the upstairs bathroom faucet.",
+      "retrieved": [
+        {
+          "fileName": "claim-investigation-report.txt",
+          "content": "The cause of the loss was a burst flexible supply line connected to the upstairs bathroom faucet."
+        }
+      ]
+    },
+    {
+      "id": "ok-dwelling-limit",
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "Coverage A - Dwelling: USD 425,000"
+        }
+      ]
+    },
+    {
+      "id": "ok-water-backup",
+      "answer": "Yes. The Water Backup and Sump Overflow endorsement limit is USD 10,000.",
+      "retrieved": [
+        {
+          "fileName": "policy-schedule.txt",
+          "content": "Water Backup and Sump Overflow: USD 10,000"
+        }
+      ]
+    },
+    {
+      "id": "assert-refuse-no-docs",
+      "answer": "I could not find sufficient information in the provided documents.",
+      "retrieved": []
+    }
+  ]
+}

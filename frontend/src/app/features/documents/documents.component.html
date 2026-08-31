@@ -145,10 +145,22 @@
             <a mat-icon-button [routerLink]="['/documents', row.id]" aria-label="View">
               <mat-icon>visibility</mat-icon>
             </a>
-            <button mat-icon-button (click)="reprocess(row)" aria-label="Reprocess">
+            <button
+              mat-icon-button
+              type="button"
+              (click)="reprocess(row, $event)"
+              aria-label="Reprocess"
+              matTooltip="Reprocess this document only"
+            >
               <mat-icon>refresh</mat-icon>
             </button>
-            <button mat-icon-button color="warn" (click)="delete(row)" aria-label="Delete">
+            <button
+              mat-icon-button
+              type="button"
+              color="warn"
+              (click)="delete(row); $event.stopPropagation()"
+              aria-label="Delete"
+            >
               <mat-icon>delete</mat-icon>
             </button>
           </td>

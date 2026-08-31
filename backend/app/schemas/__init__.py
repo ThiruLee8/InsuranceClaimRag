@@ -173,6 +173,35 @@ class RetrieveResponse(BaseModel):
     sources: list[RAGSourceOut]
 
 
+class TraceRetrievedChunk(BaseModel):
+    documentId: Optional[str] = None
+    chunkId: Optional[str] = None
+    fileName: Optional[str] = None
+    pageNumber: Optional[int] = None
+    relevanceScore: Optional[float] = None
+    content: Optional[str] = None
+
+
+class TraceOut(BaseModel):
+    traceId: str
+    timestamp: str
+    conversationId: Optional[str] = None
+    messageId: Optional[str] = None
+    question: str
+    originalQuestion: Optional[str] = None
+    searchQuery: Optional[str] = None
+    searchMode: Optional[str] = None
+    agentId: Optional[str] = None
+    model: Optional[str] = None
+    retrieved: list[TraceRetrievedChunk] = []
+    answer: str
+
+
+class TraceListOut(BaseModel):
+    total: int
+    items: list[TraceOut]
+
+
 class AgentOut(BaseModel):
     id: str
     name: str

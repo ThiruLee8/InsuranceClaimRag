@@ -62,3 +62,7 @@ Results are written to `eval/results/<label>.json`.
 
 - **MISS / low Recall@k** → retrieval problem (hybrid, rerank, rewrite, indexing).
 - **Hit but bad chat answer** → generation problem (prompt / model / context packing). Use Chat **Inspect** to confirm the right chunk text was fetched.
+
+For a full **hand-read error analysis** (random sample → open coding → ranked problems → fix prediction), see [`error_analysis/README.md`](error_analysis/README.md).
+
+For **automatic answer evals** (assertions + optional LLM judge + before/after), see [`answer_evals/README.md`](answer_evals/README.md).

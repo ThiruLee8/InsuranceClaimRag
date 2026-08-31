@@ -135,6 +135,8 @@ services:
       SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.3}
       SEARCH_MODE: ${SEARCH_MODE:-hybrid}
       ENABLE_RERANK: ${ENABLE_RERANK:-true}
+      ENABLE_TRACE_LOGGING: ${ENABLE_TRACE_LOGGING:-true}
+      TRACES_DIR: ${TRACES_DIR:-/app/data/traces}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:80}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-100}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -142,6 +144,8 @@ services:
       API_PORT: 8000
     ports:
       - "8000:8000"
+    volumes:
+      - ./eval/error_analysis/traces:/app/data/traces
     depends_on:
       sqlserver:
         condition: service_healthy

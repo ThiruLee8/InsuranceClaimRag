@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     search_mode: str = "hybrid"
     enable_rerank: bool = True
 
+    # Error analysis — complete chat traces (JSONL) for open coding
+    enable_trace_logging: bool = True
+    traces_dir: str = ""  # empty → eval/error_analysis/traces (local) or /app/data/traces
+
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000

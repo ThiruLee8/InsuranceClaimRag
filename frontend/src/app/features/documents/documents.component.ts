@@ -151,10 +151,19 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     });
   }
 
-  reprocess(doc: DocumentItem): void {
-    this.documentService.process(doc.id).subscribe({
+  reprocess(doc: DocumentItem, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+    if (
+      !confirm(
+        `Reprocess only "${doc.originalFileName}"?\n\nOther documents will not be queued.`
+      )
+    ) {
+      return;
+    }
+    this.documentService.reprocess(doc.id).subscribe({
       next: () => {
-        this.notifications.success('Document queued for processing');
+        this.notifications.success(`Queued "${doc.originalFileName}" for reprocessing`);
       },
     });
   }

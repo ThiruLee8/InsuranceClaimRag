@@ -140,7 +140,12 @@ def process_document(document_id: UUID, service: DocumentService = Depends(get_d
     try:
         return ApiResponse(
             message="Document processing has been queued.",
-            data=service.enqueue_process(document_id, requested_by="api-process"),
+            data=service.enqueue_process(
+                document_id,
+                operation="PROCESS",
+                requested_by="api-process",
+                force=False,
+            ),
         )
     except LookupError:
         raise_http("Document not found", "DOCUMENT_NOT_FOUND", 404)
