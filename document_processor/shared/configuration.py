@@ -51,6 +51,14 @@ class Settings(BaseSettings):
     processing_batch_size: int = 25
     log_level: str = "INFO"
 
+    # Retrieval: semantic | keyword | hybrid
+    search_mode: str = "hybrid"
+    enable_rerank: bool = True
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_candidates: int = 20
+    candidate_multiplier: int = 4
+    rrf_k: int = 60
+
     @property
     def sqlalchemy_database_url(self) -> str:
         if self.database_url:

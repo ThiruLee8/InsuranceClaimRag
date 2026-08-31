@@ -1,0 +1,114 @@
+{
+  "k": 5,
+  "description": "Golden questions for retrieval eval against sample-data insurance claim docs. expected_document matches uploaded OriginalFileName (with or without extension).",
+  "items": [
+    {
+      "id": "cause-of-loss",
+      "question": "What was the cause of the loss?",
+      "expected_document": "claim-investigation-report",
+      "expected_keywords": ["burst", "supply line"]
+    },
+    {
+      "id": "claim-number",
+      "question": "What is claim number CLM-2024-00847 about?",
+      "expected_document": "claim-investigation-report",
+      "expected_keywords": ["CLM-2024-00847"]
+    },
+    {
+      "id": "policy-number",
+      "question": "What coverages does policy HO-998877-55 include?",
+      "expected_document": "policy-schedule",
+      "expected_keywords": ["HO-998877-55", "Coverage A"]
+    },
+    {
+      "id": "deductible",
+      "question": "What deductible applies?",
+      "expected_document": "policy-schedule",
+      "expected_keywords": ["1,000"]
+    },
+    {
+      "id": "all-peril-deductible",
+      "question": "What is the All Peril Deductible amount?",
+      "expected_document": "policy-schedule",
+      "expected_keywords": ["All Peril Deductible"]
+    },
+    {
+      "id": "dwelling-limit",
+      "question": "What is the Coverage A dwelling limit?",
+      "expected_document": "policy-schedule",
+      "expected_keywords": ["425,000"]
+    },
+    {
+      "id": "net-settlement",
+      "question": "What is the net settlement amount?",
+      "expected_document": "claim-settlement-letter",
+      "expected_keywords": ["19,550"]
+    },
+    {
+      "id": "gross-payable",
+      "question": "What was the gross payable before deductible?",
+      "expected_document": "claim-settlement-letter",
+      "expected_keywords": ["20,550"]
+    },
+    {
+      "id": "repair-cost-estimate",
+      "question": "What is the estimated repair cost from contractor estimate EST-4412?",
+      "expected_document": "claim-investigation-report",
+      "expected_keywords": ["18,450", "EST-4412"]
+    },
+    {
+      "id": "damage-cost-range",
+      "question": "What is the preliminary cost range in the damage assessment?",
+      "expected_document": "damage-assessment-report",
+      "expected_keywords": ["16,800", "19,200"]
+    },
+    {
+      "id": "moisture-readings",
+      "question": "What moisture meter readings were recorded?",
+      "expected_document": "damage-assessment-report",
+      "expected_keywords": ["25%"]
+    },
+    {
+      "id": "insured-name",
+      "question": "Who is the named insured Jordan Hale on the policy?",
+      "expected_document": "policy-schedule",
+      "expected_keywords": ["Jordan Hale"]
+    },
+    {
+      "id": "property-address",
+      "question": "What is the property address at 412 Maple Avenue?",
+      "expected_document": "claim-investigation-report",
+      "expected_keywords": ["412 Maple"]
+    },
+    {
+      "id": "date-of-loss",
+      "question": "When was the date of loss for claim CLM-2024-00847?",
+      "expected_document": "claim-investigation-report",
+      "expected_keywords": ["March 12, 2024"]
+    },
+    {
+      "id": "messy-settlement",
+      "question": "hey can u tell me how much they actually paid out after the deductible thing for that water claim?",
+      "expected_document": "claim-settlement-letter",
+      "expected_keywords": ["19,550"]
+    },
+    {
+      "id": "water-backup-endorsement",
+      "question": "Is there a Water Backup and Sump Overflow endorsement limit?",
+      "expected_document": "policy-schedule",
+      "expected_keywords": ["10,000"]
+    },
+    {
+      "id": "living-room-hardwood",
+      "question": "How much living room hardwood flooring was affected?",
+      "expected_document": "damage-assessment-report",
+      "expected_keywords": ["180 sq ft"]
+    },
+    {
+      "id": "investigator",
+      "question": "Who investigated claim CLM-2024-00847?",
+      "expected_document": "claim-investigation-report",
+      "expected_keywords": ["Ramirez"]
+    }
+  ]
+}

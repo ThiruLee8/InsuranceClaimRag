@@ -18,6 +18,8 @@ from app.schemas import (
     ConversationUpdate,
     MessageOut,
     RAGSourceOut,
+    RetrieveRequest,
+    RetrieveResponse,
 )
 from app.services.rag_service import RAGService
 
@@ -62,6 +64,18 @@ class ConversationService:
             )
         out.sources = sources
         return out
+
+    def _hit_to_source_out(self, hit, *, debug: bool) -> RAGSourceOut:
+        doc_id = UUID(hit.document_id) if hit.document_id else None
+        chunk_id = UUID(hit.chunk_id) if hit.chunk_id else None
+        return RAGSourceOut(
+            documentId=doc_id,
+            chunkId=chunk_id,
+            fileName=hit.file_name,
+            pageNumber=hit.page_number,
+            relevanceScore=hit.score,
+            content=hit.content if debug else None,
+        )
 
     def create(self, payload: ConversationCreate) -> ConversationOut:
         conversation = Conversation(
@@ -125,6 +139,25 @@ class ConversationService:
         if trailing:
             self.db.commit()
 
+    async def retrieve(self, payload: RetrieveRequest) -> RetrieveResponse:
+        result = await self.rag_service.retrieve(
+            payload.question,
+            top_k=payload.topK,
+            similarity_threshold=payload.similarityThreshold,
+            search_mode=payload.searchMode,
+            rewrite=payload.rewrite,
+            rerank=payload.rerank,
+        )
+        sources = [
+            self._hit_to_source_out(hit, debug=payload.debug) for hit in result.hits
+        ]
+        return RetrieveResponse(
+            originalQuestion=result.original_question,
+            searchQuery=result.search_query,
+            searchMode=result.search_mode,
+            sources=sources,
+        )
+
     async def chat(self, payload: ChatRequest) -> ChatResponse:
         if payload.conversationId:
             conversation = self.repo.get(payload.conversationId)
@@ -156,6 +189,7 @@ class ConversationService:
             payload.question,
             agent_id=payload.agentId,
             model=payload.model,
+            debug=payload.debug,
         )
 
         assistant_message = Message(
@@ -183,15 +217,7 @@ class ConversationService:
                     RelevanceScore=hit.score,
                 )
             )
-            source_out.append(
-                RAGSourceOut(
-                    documentId=doc_id,
-                    chunkId=chunk_id,
-                    fileName=hit.file_name,
-                    pageNumber=hit.page_number,
-                    relevanceScore=hit.score,
-                )
-            )
+            source_out.append(self._hit_to_source_out(hit, debug=payload.debug))
         if source_rows:
             self.repo.add_sources(source_rows)
 
@@ -213,6 +239,9 @@ class ConversationService:
             sources=source_out,
             agentId=result.agent_id,
             model=result.model,
+            originalQuestion=result.original_question if payload.debug else None,
+            searchQuery=result.search_query if payload.debug else None,
+            searchMode=result.search_mode if payload.debug else None,
         )
 
     async def chat_stream(self, payload: ChatRequest):
@@ -252,6 +281,7 @@ class ConversationService:
             payload.question,
             agent_id=payload.agentId,
             model=payload.model,
+            debug=payload.debug,
         ):
             if event.get("type") != "done":
                 yield event
@@ -262,6 +292,9 @@ class ConversationService:
             model_name = str(event.get("model") or self.settings.ollama_model)
             hits = event.get("_hits") or []
             source_payload = event.get("sources") or []
+            original_question = event.get("originalQuestion")
+            search_query = event.get("searchQuery")
+            search_mode = event.get("searchMode")
 
             assistant_message = Message(
                 Id=uuid.uuid4(),
@@ -296,6 +329,7 @@ class ConversationService:
                         fileName=item.get("fileName"),
                         pageNumber=item.get("pageNumber"),
                         relevanceScore=item.get("relevanceScore"),
+                        content=item.get("content") if payload.debug else None,
                     )
                 )
             if source_rows:
@@ -314,7 +348,7 @@ class ConversationService:
                 message_id=str(assistant_message.Id),
                 sources=len(source_out),
             )
-            yield {
+            done_event: dict = {
                 "type": "done",
                 "conversationId": str(conversation.Id),
                 "messageId": str(assistant_message.Id),
@@ -323,3 +357,8 @@ class ConversationService:
                 "agentId": agent_id,
                 "model": model_name,
             }
+            if payload.debug:
+                done_event["originalQuestion"] = original_question
+                done_event["searchQuery"] = search_query
+                done_event["searchMode"] = search_mode
+            yield done_event

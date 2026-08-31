@@ -205,9 +205,9 @@ def process_all_documents_http(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="vectors/search", methods=["POST"])
 def vectors_search_http(req: func.HttpRequest) -> func.HttpResponse:
-    """Embed query + search Chroma. Only Functions may touch the vector DB."""
+    """Embed query + hybrid/semantic/keyword search. Only Functions may touch the vector DB."""
     from services.embedding_service import get_embedding_service
-    from services.vector_store_service import VectorStoreService
+    from services.hybrid_search_service import HybridSearchService
 
     try:
         body = req.get_json()
@@ -219,15 +219,23 @@ def vectors_search_http(req: func.HttpRequest) -> func.HttpResponse:
 
     top_k = int((body or {}).get("topK") or 5)
     similarity_threshold = float((body or {}).get("similarityThreshold") or 0.3)
+    search_mode = (body or {}).get("searchMode")
+    rerank = (body or {}).get("rerank")
+    if isinstance(rerank, str):
+        rerank = rerank.lower() in {"1", "true", "yes"}
 
     embedding = get_embedding_service().embed_query(question)
-    hits = VectorStoreService().search(
+    result = HybridSearchService().search(
+        question=question,
         query_embedding=embedding,
         top_k=max(1, top_k),
         similarity_threshold=similarity_threshold,
+        search_mode=str(search_mode) if search_mode else None,
+        rerank=rerank if isinstance(rerank, bool) else None,
     )
     return _json_response(
         {
+            "searchMode": result.search_mode,
             "hits": [
                 {
                     "chunkId": hit.chunk_id,
@@ -237,8 +245,10 @@ def vectors_search_http(req: func.HttpRequest) -> func.HttpResponse:
                     "chunkIndex": hit.chunk_index,
                     "content": hit.content,
                     "score": hit.score,
+                    "scoreSemantic": result.score_semantic.get(hit.chunk_id),
+                    "scoreKeyword": result.score_keyword.get(hit.chunk_id),
                 }
-                for hit in hits
+                for hit in result.hits
             ]
         }
     )

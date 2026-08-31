@@ -80,6 +80,12 @@ class VectorStoreService:
             embeddings=embeddings,
             metadatas=metadatas,
         )
+        try:
+            from services.bm25_index_service import Bm25IndexService
+
+            Bm25IndexService.get().upsert(ids=ids, documents=documents, metadatas=metadatas)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("bm25_upsert_failed", error=str(exc))
         logger.info(
             "chroma_upserted",
             document_id=str(document_id),
@@ -93,6 +99,12 @@ class VectorStoreService:
             logger.info("chroma_document_deleted", document_id=str(document_id))
         except Exception as exc:  # noqa: BLE001
             logger.warning("chroma_delete_failed", document_id=str(document_id), error=str(exc))
+        try:
+            from services.bm25_index_service import Bm25IndexService
+
+            Bm25IndexService.get().delete_document(document_id)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("bm25_delete_failed", error=str(exc))
 
     def clear_collection(self) -> None:
         name = self.settings.chroma_collection
@@ -103,6 +115,12 @@ class VectorStoreService:
             logger.warning("chroma_collection_delete_failed", collection=name, error=str(exc))
         self._collection = None
         self.ensure_collection()
+        try:
+            from services.bm25_index_service import Bm25IndexService
+
+            Bm25IndexService.get().clear()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("bm25_clear_failed", error=str(exc))
         logger.info("chroma_collection_cleared", collection=name)
 
     def search(

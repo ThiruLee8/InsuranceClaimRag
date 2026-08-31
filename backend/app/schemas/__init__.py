@@ -116,6 +116,7 @@ class RAGSourceOut(BaseModel):
     fileName: Optional[str] = None
     pageNumber: Optional[int] = None
     relevanceScore: Optional[float] = None
+    content: Optional[str] = None
 
 
 class MessageOut(BaseModel):
@@ -139,6 +140,8 @@ class ChatRequest(BaseModel):
     reuseLastUserMessage: bool = False
     agentId: Optional[str] = None
     model: Optional[str] = None
+    # When true, include chunk text + search rewrite metadata in sources/response.
+    debug: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -148,6 +151,26 @@ class ChatResponse(BaseModel):
     sources: list[RAGSourceOut]
     agentId: Optional[str] = None
     model: Optional[str] = None
+    originalQuestion: Optional[str] = None
+    searchQuery: Optional[str] = None
+    searchMode: Optional[str] = None
+
+
+class RetrieveRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=4000)
+    topK: Optional[int] = Field(default=None, ge=1, le=50)
+    similarityThreshold: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    searchMode: Optional[str] = None
+    rewrite: bool = True
+    rerank: Optional[bool] = None
+    debug: bool = True
+
+
+class RetrieveResponse(BaseModel):
+    originalQuestion: str
+    searchQuery: str
+    searchMode: Optional[str] = None
+    sources: list[RAGSourceOut]
 
 
 class AgentOut(BaseModel):

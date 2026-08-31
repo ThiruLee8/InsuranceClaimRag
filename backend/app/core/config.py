@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     chunk_overlap: int = 150
     top_k: int = 5
     similarity_threshold: float = 0.3
+    # semantic | keyword | hybrid — forwarded to document-processor search
+    search_mode: str = "hybrid"
+    enable_rerank: bool = True
 
     # API
     api_host: str = "0.0.0.0"

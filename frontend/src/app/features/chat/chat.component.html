@@ -1,4 +1,4 @@
-<section class="chat-layout">
+<section class="chat-layout" [class.chat-layout--inspect]="inspectRetrieval">
   <aside class="sidebar">
     <div class="sidebar__header">
       <div>
@@ -65,6 +65,16 @@
             }
           </mat-select>
         </mat-form-field>
+        <button
+          type="button"
+          class="btn btn--ghost btn--sm"
+          [class.btn--active]="inspectRetrieval"
+          (click)="toggleInspect()"
+          title="Show question, retrieved chunks, and answer side by side"
+        >
+          <mat-icon>manage_search</mat-icon>
+          Inspect
+        </button>
         @if (activeConversationId) {
           <button type="button" class="btn btn--ghost btn--sm" (click)="clearConversation()">
             <mat-icon>delete_sweep</mat-icon>
@@ -74,7 +84,61 @@
       </div>
     </header>
 
-    <div class="messages" #messagePane>
+    @if (inspectRetrieval) {
+      <div class="inspect-grid" aria-label="Retrieval inspection panel">
+        <section class="inspect-col">
+          <h3>Question</h3>
+          <p class="inspect-text">{{ inspectQuestion || 'Ask a question to inspect retrieval.' }}</p>
+          @if (inspectSearchQuery) {
+            <div class="inspect-meta">
+              <span class="inspect-label">Search query</span>
+              <p class="inspect-text inspect-text--muted">{{ inspectSearchQuery }}</p>
+            </div>
+          }
+          @if (inspectSearchMode) {
+            <div class="inspect-meta">
+              <span class="inspect-label">Search mode</span>
+              <p class="inspect-text inspect-text--muted">{{ inspectSearchMode }}</p>
+            </div>
+          }
+        </section>
+        <section class="inspect-col">
+          <h3>Fetched ({{ inspectSources.length }})</h3>
+          @if (!inspectSources.length) {
+            <p class="inspect-text inspect-text--muted">No chunks retrieved yet.</p>
+          } @else {
+            <div class="inspect-chunks">
+              @for (source of inspectSources; track $index) {
+                <article class="inspect-chunk">
+                  <header>
+                    <strong>{{ source.fileName || 'Document' }}</strong>
+                    <span>
+                      @if (source.pageNumber) { p.{{ source.pageNumber }} · }
+                      @if (source.relevanceScore != null) {
+                        {{ (source.relevanceScore * 100) | number: '1.0-0' }}%
+                      }
+                    </span>
+                  </header>
+                  <pre>{{ source.content || '(chunk text not available — enable Inspect before sending)' }}</pre>
+                </article>
+              }
+            </div>
+          }
+        </section>
+        <section class="inspect-col">
+          <h3>Answer</h3>
+          @if (inspectAnswer) {
+            <div class="markdown inspect-answer" [innerHTML]="inspectAnswer | markdown"></div>
+          } @else {
+            <p class="inspect-text inspect-text--muted">
+              {{ sending ? (streamStage === 'generating' ? 'Generating…' : 'Retrieving…') : 'Answer will appear here.' }}
+            </p>
+          }
+        </section>
+      </div>
+    }
+
+    <div class="messages" #messagePane [class.messages--compact]="inspectRetrieval">
       @if (loadingMessages) {
         <div class="centered"><mat-spinner diameter="36" /></div>
       } @else if (!messages.length) {

@@ -22,6 +22,12 @@ class VectorSearchHit:
     score: float
 
 
+@dataclass
+class VectorSearchResult:
+    hits: list[VectorSearchHit]
+    search_mode: str | None = None
+
+
 class VectorGatewayClient:
     """
     HTTP client to the document-processor Azure Functions vector APIs.
@@ -42,12 +48,18 @@ class VectorGatewayClient:
         question: str,
         top_k: int,
         similarity_threshold: float,
-    ) -> list[VectorSearchHit]:
-        payload = {
+        search_mode: str | None = None,
+        rerank: bool | None = None,
+    ) -> VectorSearchResult:
+        payload: dict = {
             "question": question,
             "topK": top_k,
             "similarityThreshold": similarity_threshold,
         }
+        if search_mode:
+            payload["searchMode"] = search_mode
+        if rerank is not None:
+            payload["rerank"] = rerank
         with httpx.Client(timeout=self.timeout) as client:
             response = client.post(self._url("/api/vectors/search"), json=payload)
             response.raise_for_status()
@@ -65,8 +77,14 @@ class VectorGatewayClient:
                     score=float(item.get("score") or 0.0),
                 )
             )
-        logger.info("vector_gateway_search_completed", hit_count=len(hits), top_k=top_k)
-        return hits
+        mode = data.get("searchMode")
+        logger.info(
+            "vector_gateway_search_completed",
+            hit_count=len(hits),
+            top_k=top_k,
+            search_mode=mode,
+        )
+        return VectorSearchResult(hits=hits, search_mode=str(mode) if mode else None)
 
     def delete_document(self, document_id: UUID) -> None:
         with httpx.Client(timeout=self.timeout) as client:

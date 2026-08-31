@@ -7,11 +7,21 @@ import {
   ApiResponse,
   ChatResponse,
   RagSource,
+  RetrieveResponse,
 } from '../models/api.models';
 
 export type ChatStreamEvent =
   | { type: 'meta'; conversationId: string }
-  | { type: 'status'; stage: string; agentId?: string; model?: string; sourceCount?: number }
+  | {
+      type: 'status';
+      stage: string;
+      agentId?: string;
+      model?: string;
+      sourceCount?: number;
+      originalQuestion?: string;
+      searchQuery?: string;
+      searchMode?: string;
+    }
   | { type: 'sources'; sources: RagSource[] }
   | { type: 'token'; content: string }
   | {
@@ -22,6 +32,9 @@ export type ChatStreamEvent =
       sources: RagSource[];
       agentId?: string | null;
       model?: string | null;
+      originalQuestion?: string | null;
+      searchQuery?: string | null;
+      searchMode?: string | null;
     }
   | { type: 'error'; message: string; errorCode?: string };
 
@@ -40,7 +53,7 @@ export class ChatService {
   ask(
     question: string,
     conversationId?: string | null,
-    options?: { agentId?: string | null; model?: string | null }
+    options?: { agentId?: string | null; model?: string | null; debug?: boolean }
   ): Observable<ChatResponse> {
     return this.http
       .post<ApiResponse<ChatResponse>>(this.baseUrl, {
@@ -48,6 +61,27 @@ export class ChatService {
         question,
         agentId: options?.agentId || null,
         model: options?.model || null,
+        debug: !!options?.debug,
+      })
+      .pipe(map((res) => res.data!));
+  }
+
+  retrieve(
+    question: string,
+    options?: {
+      topK?: number;
+      searchMode?: string | null;
+      rewrite?: boolean;
+      debug?: boolean;
+    }
+  ): Observable<RetrieveResponse> {
+    return this.http
+      .post<ApiResponse<RetrieveResponse>>(`${this.baseUrl}/retrieve`, {
+        question,
+        topK: options?.topK ?? null,
+        searchMode: options?.searchMode || null,
+        rewrite: options?.rewrite ?? true,
+        debug: options?.debug ?? true,
       })
       .pipe(map((res) => res.data!));
   }
@@ -60,6 +94,7 @@ export class ChatService {
       model?: string | null;
       regenerateMessageId?: string | null;
       reuseLastUserMessage?: boolean;
+      debug?: boolean;
     }
   ): Observable<ChatStreamEvent> {
     const body = {
@@ -69,6 +104,7 @@ export class ChatService {
       model: options?.model || null,
       regenerateMessageId: options?.regenerateMessageId || null,
       reuseLastUserMessage: !!options?.reuseLastUserMessage,
+      debug: !!options?.debug,
     };
 
     return new Observable<ChatStreamEvent>((subscriber) => {
@@ -139,7 +175,7 @@ export class ChatService {
     question: string,
     conversationId: string,
     regenerateMessageId: string,
-    options?: { agentId?: string | null; model?: string | null }
+    options?: { agentId?: string | null; model?: string | null; debug?: boolean }
   ): Observable<ChatResponse> {
     return this.http
       .post<ApiResponse<ChatResponse>>(this.baseUrl, {
@@ -148,6 +184,7 @@ export class ChatService {
         regenerateMessageId,
         agentId: options?.agentId || null,
         model: options?.model || null,
+        debug: !!options?.debug,
       })
       .pipe(map((res) => res.data!));
   }

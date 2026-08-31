@@ -1,0 +1,308 @@
+{
+  "summary": {
+    "label": "baseline",
+    "timestamp": "2026-08-13T12:47:05.222510+00:00",
+    "k": 5,
+    "search_mode": "semantic",
+    "rerank": false,
+    "rewrite": false,
+    "n": 18,
+    "recall_at_k": 0.9444444444444444,
+    "mrr": 0.7546296296296295,
+    "keyword_recall": 0.8888888888888888
+  },
+  "questions": [
+    {
+      "id": "cause-of-loss",
+      "question": "What was the cause of the loss?",
+      "expected_document": "claim-investigation-report",
+      "search_query": "What was the cause of the loss?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "claim-number",
+      "question": "What is claim number CLM-2024-00847 about?",
+      "expected_document": "claim-investigation-report",
+      "search_query": "What is claim number CLM-2024-00847 about?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 0.5,
+      "rank": 2,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt",
+        "claim-investigation-report.txt",
+        "policy-schedule.txt",
+        "policy-schedule.txt"
+      ]
+    },
+    {
+      "id": "policy-number",
+      "question": "What coverages does policy HO-998877-55 include?",
+      "expected_document": "policy-schedule",
+      "search_query": "What coverages does policy HO-998877-55 include?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "policy-schedule.txt",
+        "claim-investigation-report.txt",
+        "policy-schedule.txt",
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "deductible",
+      "question": "What deductible applies?",
+      "expected_document": "policy-schedule",
+      "search_query": "What deductible applies?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 0.5,
+      "rank": 2,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-investigation-report.txt",
+        "policy-schedule.txt",
+        "policy-schedule.txt"
+      ]
+    },
+    {
+      "id": "all-peril-deductible",
+      "question": "What is the All Peril Deductible amount?",
+      "expected_document": "policy-schedule",
+      "search_query": "What is the All Peril Deductible amount?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 0.5,
+      "rank": 2,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-investigation-report.txt",
+        "policy-schedule.txt",
+        "claim-settlement-letter.txt"
+      ]
+    },
+    {
+      "id": "dwelling-limit",
+      "question": "What is the Coverage A dwelling limit?",
+      "expected_document": "policy-schedule",
+      "search_query": "What is the Coverage A dwelling limit?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "policy-schedule.txt",
+        "claim-investigation-report.txt",
+        "policy-schedule.txt",
+        "claim-settlement-letter.txt",
+        "damage-assessment-report.txt"
+      ]
+    },
+    {
+      "id": "net-settlement",
+      "question": "What is the net settlement amount?",
+      "expected_document": "claim-settlement-letter",
+      "search_query": "What is the net settlement amount?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-settlement-letter.txt"
+      ]
+    },
+    {
+      "id": "gross-payable",
+      "question": "What was the gross payable before deductible?",
+      "expected_document": "claim-settlement-letter",
+      "search_query": "What was the gross payable before deductible?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 0.3333333333333333,
+      "rank": 3,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-investigation-report.txt",
+        "policy-schedule.txt",
+        "claim-settlement-letter.txt"
+      ]
+    },
+    {
+      "id": "repair-cost-estimate",
+      "question": "What is the estimated repair cost from contractor estimate EST-4412?",
+      "expected_document": "claim-investigation-report",
+      "search_query": "What is the estimated repair cost from contractor estimate EST-4412?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-investigation-report.txt",
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt",
+        "claim-investigation-report.txt",
+        "damage-assessment-report.txt"
+      ]
+    },
+    {
+      "id": "damage-cost-range",
+      "question": "What is the preliminary cost range in the damage assessment?",
+      "expected_document": "damage-assessment-report",
+      "search_query": "What is the preliminary cost range in the damage assessment?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 0.25,
+      "rank": 4,
+      "keyword_hit": false,
+      "retrieved_files": [
+        "claim-investigation-report.txt",
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt",
+        "damage-assessment-report.txt",
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "moisture-readings",
+      "question": "What moisture meter readings were recorded?",
+      "expected_document": "damage-assessment-report",
+      "search_query": "What moisture meter readings were recorded?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "damage-assessment-report.txt"
+      ]
+    },
+    {
+      "id": "insured-name",
+      "question": "Who is the named insured Jordan Hale on the policy?",
+      "expected_document": "policy-schedule",
+      "search_query": "Who is the named insured Jordan Hale on the policy?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "policy-schedule.txt",
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt",
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "property-address",
+      "question": "What is the property address at 412 Maple Avenue?",
+      "expected_document": "claim-investigation-report",
+      "search_query": "What is the property address at 412 Maple Avenue?",
+      "search_mode": "semantic",
+      "hit_at_k": 0.0,
+      "mrr": 0.0,
+      "rank": null,
+      "keyword_hit": false,
+      "retrieved_files": []
+    },
+    {
+      "id": "date-of-loss",
+      "question": "When was the date of loss for claim CLM-2024-00847?",
+      "expected_document": "claim-investigation-report",
+      "search_query": "When was the date of loss for claim CLM-2024-00847?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 0.5,
+      "rank": 2,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt",
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "messy-settlement",
+      "question": "hey can u tell me how much they actually paid out after the deductible thing for that water claim?",
+      "expected_document": "claim-settlement-letter",
+      "search_query": "hey can u tell me how much they actually paid out after the deductible thing for that water claim?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt",
+        "claim-investigation-report.txt",
+        "policy-schedule.txt",
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "water-backup-endorsement",
+      "question": "Is there a Water Backup and Sump Overflow endorsement limit?",
+      "expected_document": "policy-schedule",
+      "search_query": "Is there a Water Backup and Sump Overflow endorsement limit?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "policy-schedule.txt",
+        "claim-settlement-letter.txt",
+        "claim-investigation-report.txt",
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "living-room-hardwood",
+      "question": "How much living room hardwood flooring was affected?",
+      "expected_document": "damage-assessment-report",
+      "search_query": "How much living room hardwood flooring was affected?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "damage-assessment-report.txt",
+        "damage-assessment-report.txt",
+        "claim-investigation-report.txt"
+      ]
+    },
+    {
+      "id": "investigator",
+      "question": "Who investigated claim CLM-2024-00847?",
+      "expected_document": "claim-investigation-report",
+      "search_query": "Who investigated claim CLM-2024-00847?",
+      "search_mode": "semantic",
+      "hit_at_k": 1.0,
+      "mrr": 1.0,
+      "rank": 1,
+      "keyword_hit": true,
+      "retrieved_files": [
+        "claim-investigation-report.txt",
+        "claim-investigation-report.txt",
+        "claim-settlement-letter.txt"
+      ]
+    }
+  ]
+}

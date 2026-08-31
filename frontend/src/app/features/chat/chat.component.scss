@@ -15,6 +15,116 @@
   overflow: hidden;
 }
 
+.chat-layout--inspect {
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.btn--active {
+  background: rgba(18, 50, 70, 0.12);
+  border-color: rgba(18, 50, 70, 0.28);
+  color: #123246;
+}
+
+.inspect-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0.75rem 1rem 0;
+  flex-shrink: 0;
+  max-height: 42%;
+  min-height: 180px;
+}
+
+.inspect-col {
+  background: #f4f8fa;
+  border: 1px solid rgba(18, 50, 70, 0.1);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  overflow: auto;
+  min-height: 0;
+
+  h3 {
+    margin: 0 0 0.45rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #5b7383;
+  }
+}
+
+.inspect-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #123246;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.inspect-text--muted {
+  color: #5b7383;
+}
+
+.inspect-meta {
+  margin-top: 0.75rem;
+}
+
+.inspect-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7a93a3;
+  margin-bottom: 0.2rem;
+}
+
+.inspect-chunks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inspect-chunk {
+  background: #fff;
+  border: 1px solid rgba(18, 50, 70, 0.08);
+  border-radius: 8px;
+  padding: 0.5rem 0.55rem;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #5b7383;
+    margin-bottom: 0.35rem;
+
+    strong {
+      color: #123246;
+      font-weight: 600;
+    }
+  }
+
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: inherit;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: #1a3548;
+    max-height: 9rem;
+    overflow: auto;
+  }
+}
+
+.inspect-answer {
+  font-size: 0.88rem;
+}
+
+.messages--compact {
+  max-height: none;
+  flex: 1;
+}
+
 .sidebar,
 .chat-panel {
   background: rgba(255, 255, 255, 0.9);
@@ -137,6 +247,10 @@
 .chat-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.chat-layout--inspect .chat-panel {
+  grid-template-rows: auto minmax(180px, 0.42fr) minmax(0, 1fr) auto;
 }
 
 .chat-panel__header {
@@ -520,7 +634,8 @@
     min-height: calc(100vh - 7rem);
   }
 
-  .chat-layout {
+  .chat-layout,
+  .chat-layout--inspect {
     grid-template-columns: 1fr;
     height: auto;
     max-height: none;
@@ -533,6 +648,11 @@
 
   .chat-panel {
     height: min(70vh, 640px);
+  }
+
+  .inspect-grid {
+    grid-template-columns: 1fr;
+    max-height: none;
   }
 
   .chat-panel__controls {

@@ -100,6 +100,7 @@ export interface RagSource {
   fileName?: string | null;
   pageNumber?: number | null;
   relevanceScore?: number | null;
+  content?: string | null;
 }
 
 export interface MessageItem {
@@ -114,6 +115,9 @@ export interface MessageItem {
   streaming?: boolean;
   failed?: boolean;
   errorMessage?: string | null;
+  originalQuestion?: string | null;
+  searchQuery?: string | null;
+  searchMode?: string | null;
 }
 
 export interface ChatResponse {
@@ -123,6 +127,16 @@ export interface ChatResponse {
   sources: RagSource[];
   agentId?: string | null;
   model?: string | null;
+  originalQuestion?: string | null;
+  searchQuery?: string | null;
+  searchMode?: string | null;
+}
+
+export interface RetrieveResponse {
+  originalQuestion: string;
+  searchQuery: string;
+  searchMode?: string | null;
+  sources: RagSource[];
 }
 
 export interface AgentItem {

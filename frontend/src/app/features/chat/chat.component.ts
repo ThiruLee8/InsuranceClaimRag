@@ -61,6 +61,12 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   loadingMessages = false;
   sending = false;
   streamStage: 'idle' | 'retrieving' | 'generating' = 'idle';
+  inspectRetrieval = false;
+  inspectQuestion = '';
+  inspectAnswer = '';
+  inspectSources: MessageItem['sources'] = [];
+  inspectSearchQuery = '';
+  inspectSearchMode = '';
   private shouldScroll = false;
   private streamAssistantId: string | null = null;
 
@@ -105,7 +111,24 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   }
 
   agentOptions() {
-    return { agentId: this.selectedAgentId, model: this.selectedModel };
+    return {
+      agentId: this.selectedAgentId,
+      model: this.selectedModel,
+      debug: this.inspectRetrieval,
+    };
+  }
+
+  toggleInspect(): void {
+    this.inspectRetrieval = !this.inspectRetrieval;
+  }
+
+  private resetInspect(question: string): void {
+    if (!this.inspectRetrieval) return;
+    this.inspectQuestion = question;
+    this.inspectAnswer = '';
+    this.inspectSources = [];
+    this.inspectSearchQuery = '';
+    this.inspectSearchMode = '';
   }
 
   refreshConversations(done?: () => void): void {
@@ -159,6 +182,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.sending = true;
     this.streamStage = 'retrieving';
     this.form.reset();
+    this.resetInspect(question);
     this.messages = [
       ...this.messages,
       {
@@ -214,18 +238,28 @@ export class ChatComponent implements OnInit, AfterViewChecked {
           }
           if (event.type === 'status') {
             this.streamStage = event.stage === 'generating' ? 'generating' : 'retrieving';
+            if (this.inspectRetrieval) {
+              if (event.originalQuestion) this.inspectQuestion = event.originalQuestion;
+              if (event.searchQuery) this.inspectSearchQuery = event.searchQuery;
+              if (event.searchMode) this.inspectSearchMode = event.searchMode;
+            }
             return;
           }
           if (event.type === 'sources') {
             this.patchStreamingAssistant({ sources: event.sources || [] });
+            if (this.inspectRetrieval) {
+              this.inspectSources = event.sources || [];
+            }
             return;
           }
           if (event.type === 'token') {
             this.streamStage = 'generating';
             const current = this.messages.find((m) => m.id === this.streamAssistantId);
-            this.patchStreamingAssistant({
-              content: (current?.content || '') + event.content,
-            });
+            const nextContent = (current?.content || '') + event.content;
+            this.patchStreamingAssistant({ content: nextContent });
+            if (this.inspectRetrieval) {
+              this.inspectAnswer = nextContent;
+            }
             this.shouldScroll = true;
             return;
           }
@@ -240,7 +274,17 @@ export class ChatComponent implements OnInit, AfterViewChecked {
               streaming: false,
               failed: false,
               errorMessage: null,
+              originalQuestion: event.originalQuestion || null,
+              searchQuery: event.searchQuery || null,
+              searchMode: event.searchMode || null,
             });
+            if (this.inspectRetrieval) {
+              this.inspectQuestion = event.originalQuestion || this.inspectQuestion;
+              this.inspectSearchQuery = event.searchQuery || this.inspectSearchQuery;
+              this.inspectSearchMode = event.searchMode || this.inspectSearchMode;
+              this.inspectSources = event.sources || [];
+              this.inspectAnswer = event.answer;
+            }
             this.streamAssistantId = null;
             this.sending = false;
             this.streamStage = 'idle';
@@ -287,6 +331,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
     this.sending = true;
     this.streamStage = 'retrieving';
+    this.resetInspect(priorUser.content);
     this.messages = this.messages.slice(0, idx);
 
     const isPersistedId = !message.id.startsWith('temp-');
@@ -305,6 +350,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     const following = this.messages[idx + 1];
     this.sending = true;
     this.streamStage = 'retrieving';
+    this.resetInspect(message.content);
 
     if (following?.role === 'assistant') {
       this.messages = this.messages.slice(0, idx + 1);
