@@ -27,6 +27,7 @@ export class ShellComponent {
     { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { label: 'Documents', path: '/documents', icon: 'folder_open' },
     { label: 'Chat', path: '/chat', icon: 'chat' },
+    { label: 'Agent', path: '/agent', icon: 'smart_toy' },
     { label: 'Conversations', path: '/conversations', icon: 'forum' },
   ];
 }

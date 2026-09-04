@@ -168,3 +168,107 @@ export interface DashboardStats {
   recentDocuments: DocumentItem[];
   recentConversations: ConversationItem[];
 }
+
+export type AgentLoopMode = 'agent' | 'workflow' | 'race';
+
+export interface AgentToolItem {
+  name: string;
+  description: string;
+  parameters: string;
+}
+
+export interface AgentSampleTask {
+  id: string;
+  label: string;
+  task: string;
+  why: string;
+}
+
+export interface AgentLoopMeta {
+  tools: AgentToolItem[];
+  sampleTasks: AgentSampleTask[];
+  defaultMaxSteps: number;
+  defaultMaxLlmCalls: number;
+  defaultMaxSeconds: number;
+  defaultModel: string;
+}
+
+export interface AgentStepItem {
+  index: number;
+  thought: string;
+  action: string;
+  actionInput?: unknown;
+  observation: string;
+  elapsedMs: number;
+  llmCalls: number;
+}
+
+export interface AgentMetrics {
+  steps: number;
+  llmCalls: number;
+  toolCalls: number;
+  estimatedTokens: number;
+  elapsedMs: number;
+  stopReason: string;
+  costUnits: number;
+}
+
+export interface AgentLoopRun {
+  mode: string;
+  sessionId: string;
+  task: string;
+  answer: string;
+  steps: AgentStepItem[];
+  sources: RagSource[];
+  metrics: AgentMetrics;
+  memoriesUsed: string[];
+  memorySaved?: string | null;
+  model?: string | null;
+}
+
+export interface AgentRaceComparisonMetric {
+  agent: number;
+  workflow: number;
+  delta: number;
+}
+
+export interface AgentRaceResult {
+  task: string;
+  sessionId: string;
+  agent: AgentLoopRun;
+  workflow: AgentLoopRun;
+  winner: string;
+  ship: string;
+  rationale: string;
+  comparison: {
+    elapsedMs: AgentRaceComparisonMetric;
+    llmCalls: AgentRaceComparisonMetric;
+    toolCalls: AgentRaceComparisonMetric;
+    estimatedTokens: AgentRaceComparisonMetric;
+    steps: AgentRaceComparisonMetric;
+    costUnits: AgentRaceComparisonMetric;
+    stopReason: { agent: string; workflow: string };
+  };
+}
+
+export interface AgentMemoryItem {
+  id: string;
+  sessionId: string;
+  createdAt: string;
+  task: string;
+  summary: string;
+  facts: string[];
+}
+
+export interface AgentMemoryList {
+  sessionId?: string | null;
+  items: AgentMemoryItem[];
+}
+
+export type AgentLoopStreamEvent =
+  | { type: 'run_start'; mode: string; sessionId: string; task: string }
+  | { type: 'step'; mode: string; step: AgentStepItem }
+  | { type: 'done'; mode: string; result: AgentLoopRun }
+  | { type: 'race_start'; sessionId: string; task: string }
+  | { type: 'race'; result: AgentRaceResult }
+  | { type: 'error'; message: string };

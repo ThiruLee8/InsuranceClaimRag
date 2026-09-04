@@ -1,0 +1,327 @@
+<section class="agent-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Week 7 · Module 4</p>
+      <h1>Claims agent loop</h1>
+      <p>
+        A hand-rolled ReAct loop — plan, act, observe, repeat — next to a fixed claims checklist.
+        The loop is ~50 lines. Frameworks like LangChain/LangGraph wrap the same thing.
+      </p>
+    </div>
+    <a class="btn btn--ghost" routerLink="/chat">Open Chat (one-shot RAG)</a>
+  </header>
+
+  <details class="howto">
+    <summary>How to test this (mentor checklist)</summary>
+    <ol>
+      <li>
+        Upload the four sample PDFs on
+        <a routerLink="/documents">Documents</a>
+        and wait until they are <strong>Processed</strong>.
+      </li>
+      <li>
+        Stay on this page. Pick <strong>Full investigation (branching)</strong>, mode
+        <strong>Agent loop</strong>, click Run. You should see several steps: thought → tool →
+        observation, then a final answer. That is a genuine multi-step task.
+      </li>
+      <li>
+        Set <strong>Max steps</strong> to 2 and run the same task again. It must stop with
+        “max steps” instead of looping forever.
+      </li>
+      <li>
+        Pick <strong>Known checklist</strong> or <strong>Single fact</strong>, mode
+        <strong>Race both</strong>. Compare LLM calls, time, and tokens. Read the
+        <strong>What I’d ship</strong> card — that is the workflow-vs-agent decision with real numbers.
+      </li>
+      <li>
+        After a finished investigation, pick <strong>Follow-up (memory)</strong> with the same session
+        id. The agent should call <code>search_memory</code> (or inject prior notes) instead of starting
+        from zero.
+      </li>
+    </ol>
+  </details>
+
+  <div class="mode-row">
+    @for (item of modes; track item.id) {
+      <button
+        type="button"
+        class="mode-card"
+        [class.mode-card--active]="mode === item.id"
+        [disabled]="running"
+        (click)="setMode(item.id)"
+      >
+        <strong>{{ item.label }}</strong>
+        <span>{{ item.hint }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="samples">
+    @for (sample of sampleTasks; track sample.id) {
+      <button type="button" class="chip" [disabled]="running" (click)="useSample(sample)">
+        {{ sample.label }}
+      </button>
+    }
+  </div>
+  @if (sampleTasks.length) {
+    <p class="sample-why">
+      @for (sample of sampleTasks; track sample.id) {
+        @if (form.value.task === sample.task) {
+          <span>{{ sample.why }}</span>
+        }
+      }
+    </p>
+  }
+
+  <form class="composer" [formGroup]="form" (ngSubmit)="run()">
+    <mat-form-field appearance="outline" class="composer__task" subscriptSizing="dynamic">
+      <mat-label>Task</mat-label>
+      <textarea matInput rows="3" formControlName="task"></textarea>
+    </mat-form-field>
+    <div class="budgets">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Max steps</mat-label>
+        <input matInput type="number" formControlName="maxSteps" min="1" max="20" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Max LLM calls</mat-label>
+        <input matInput type="number" formControlName="maxLlmCalls" min="1" max="30" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Max seconds</mat-label>
+        <input matInput type="number" formControlName="maxSeconds" min="0" max="300" />
+      </mat-form-field>
+      <label class="persist">
+        <input type="checkbox" formControlName="persistMemory" />
+        Save run to long-term memory
+      </label>
+      <button type="submit" class="btn btn--primary" [disabled]="form.invalid || running">
+        <mat-icon>play_arrow</mat-icon>
+        {{ running ? 'Running…' : 'Run' }}
+      </button>
+    </div>
+  </form>
+
+  @if (running) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  @if (errorMessage) {
+    <p class="error-banner">{{ errorMessage }}</p>
+  }
+
+  <div class="workspace">
+    <div class="timeline-col">
+      <div class="panel-head">
+        <h2>Steps</h2>
+        <p>
+          @if (running) {
+            {{ activeRunMode === 'workflow' ? 'Fixed workflow running…' : 'Agent looping…' }}
+          } @else {
+            Each row is thought → tool → observation. Stop reason is shown on the result card.
+          }
+        </p>
+      </div>
+      <div class="timelines" #stepPane [class.timelines--split]="mode === 'race'">
+        @if (mode !== 'workflow') {
+          <div class="timeline">
+            <h3>Agent</h3>
+            @if (!agentSteps.length) {
+              <p class="empty">Run the agent to see the loop.</p>
+            }
+            @for (step of agentSteps; track step.index) {
+              <article class="step" [class.step--finish]="step.action === 'finish'">
+                <div class="step__index">{{ step.index }}</div>
+                <div class="step__body">
+                  @if (step.thought) {
+                    <div class="step__thought">{{ step.thought }}</div>
+                  }
+                  <div class="step__action">
+                    <code>{{ step.action }}</code>
+                    <span>{{ actionInputText(step.actionInput) }}</span>
+                  </div>
+                  @if (step.observation) {
+                    <pre class="step__obs">{{ step.observation }}</pre>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+        @if (mode !== 'agent') {
+          <div class="timeline">
+            <h3>Workflow</h3>
+            @if (!workflowSteps.length) {
+              <p class="empty">Run the workflow (or a race) to see the fixed checklist.</p>
+            }
+            @for (step of workflowSteps; track step.index) {
+              <article class="step" [class.step--finish]="step.action === 'finish'">
+                <div class="step__index">{{ step.index }}</div>
+                <div class="step__body">
+                  @if (step.thought) {
+                    <div class="step__thought">{{ step.thought }}</div>
+                  }
+                  <div class="step__action">
+                    <code>{{ step.action }}</code>
+                    <span>{{ actionInputText(step.actionInput) }}</span>
+                  </div>
+                  @if (step.observation) {
+                    <pre class="step__obs">{{ step.observation }}</pre>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <aside class="side">
+      @if (race) {
+        <section class="card card--ship">
+          <h2>What I’d ship</h2>
+          <p class="ship-tag">{{ race.ship === 'workflow' ? 'Fixed workflow' : 'Agent loop' }}</p>
+          <p>{{ race.rationale }}</p>
+        </section>
+      }
+
+      <section class="card">
+        <h2>Budgets used</h2>
+        @if (!agentResult && !workflowResult) {
+          <p class="empty">Numbers appear after a run.</p>
+        } @else {
+          <table class="metrics">
+            <thead>
+              <tr>
+                <th></th>
+                @if (agentResult) {
+                  <th>Agent</th>
+                }
+                @if (workflowResult) {
+                  <th>Workflow</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Steps</td>
+                @if (agentResult) {
+                  <td>{{ agentResult.metrics.steps }}</td>
+                }
+                @if (workflowResult) {
+                  <td>{{ workflowResult.metrics.steps }}</td>
+                }
+              </tr>
+              <tr>
+                <td>LLM calls</td>
+                @if (agentResult) {
+                  <td>{{ agentResult.metrics.llmCalls }}</td>
+                }
+                @if (workflowResult) {
+                  <td>{{ workflowResult.metrics.llmCalls }}</td>
+                }
+              </tr>
+              <tr>
+                <td>Tool calls</td>
+                @if (agentResult) {
+                  <td>{{ agentResult.metrics.toolCalls }}</td>
+                }
+                @if (workflowResult) {
+                  <td>{{ workflowResult.metrics.toolCalls }}</td>
+                }
+              </tr>
+              <tr>
+                <td>Est. tokens</td>
+                @if (agentResult) {
+                  <td>{{ agentResult.metrics.estimatedTokens }}</td>
+                }
+                @if (workflowResult) {
+                  <td>{{ workflowResult.metrics.estimatedTokens }}</td>
+                }
+              </tr>
+              <tr>
+                <td>Time</td>
+                @if (agentResult) {
+                  <td>{{ agentResult.metrics.elapsedMs | number: '1.0-0' }} ms</td>
+                }
+                @if (workflowResult) {
+                  <td>{{ workflowResult.metrics.elapsedMs | number: '1.0-0' }} ms</td>
+                }
+              </tr>
+              <tr>
+                <td>Stop</td>
+                @if (agentResult) {
+                  <td>{{ stopLabel(agentResult.metrics.stopReason) }}</td>
+                }
+                @if (workflowResult) {
+                  <td>{{ stopLabel(workflowResult.metrics.stopReason) }}</td>
+                }
+              </tr>
+            </tbody>
+          </table>
+        }
+      </section>
+
+      <section class="card">
+        <div class="card__row">
+          <h2>Long-term memory</h2>
+          <div class="card__actions">
+            <button type="button" class="btn btn--ghost btn--xs" (click)="newSession()">New session</button>
+            <button type="button" class="btn btn--ghost btn--xs" (click)="clearMemory()">Clear</button>
+          </div>
+        </div>
+        <p class="session">Session {{ sessionId.slice(0, 8) }}…</p>
+        <p class="hint">
+          Short-term = this run’s scratchpad. Long-term = summarised notes with keyword overlap
+          (stand-in for vector memory / mem0).
+        </p>
+        @if (!memories.length) {
+          <p class="empty">No saved notes yet for this session.</p>
+        } @else {
+          <ul class="memory-list">
+            @for (item of memories; track item.id) {
+              <li>
+                <strong>{{ item.createdAt | date: 'short' }}</strong>
+                <span>{{ item.summary }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="card">
+        <h2>Tools</h2>
+        @if (!meta) {
+          <p class="empty">Loading tool descriptions…</p>
+        } @else {
+          <ul class="tool-list">
+            @for (tool of meta.tools; track tool.name) {
+              <li>
+                <code>{{ tool.name }}</code>
+                <span>{{ tool.description }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </aside>
+  </div>
+
+  @if (answer) {
+    <section class="answer-card">
+      <h2>Answer</h2>
+      <div class="markdown" [innerHTML]="answer | markdown"></div>
+      @if (agentResult?.sources?.length || workflowResult?.sources?.length) {
+        <div class="sources">
+          <h3>Sources</h3>
+          @for (source of (agentResult?.sources || workflowResult?.sources || []); track $index) {
+            <a class="source" [routerLink]="source.documentId ? ['/documents', source.documentId] : null">
+              {{ source.fileName || 'Document' }}
+              @if (source.pageNumber) { · Page {{ source.pageNumber }} }
+            </a>
+          }
+        </div>
+      }
+    </section>
+  }
+</section>

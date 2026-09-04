@@ -238,3 +238,94 @@ class HealthOut(BaseModel):
     azurite: str
     chroma: str
     ollama: str
+
+
+class AgentToolOut(BaseModel):
+    name: str
+    description: str
+    parameters: str
+
+
+class AgentSampleTaskOut(BaseModel):
+    id: str
+    label: str
+    task: str
+    why: str
+
+
+class AgentLoopMetaOut(BaseModel):
+    tools: list[AgentToolOut]
+    sampleTasks: list[AgentSampleTaskOut]
+    defaultMaxSteps: int
+    defaultMaxLlmCalls: int
+    defaultMaxSeconds: float
+    defaultModel: str
+
+
+class AgentLoopRunRequest(BaseModel):
+    task: str = Field(min_length=1, max_length=4000)
+    mode: str = Field(default="agent")
+    sessionId: Optional[str] = None
+    model: Optional[str] = None
+    maxSteps: int = Field(default=8, ge=1, le=20)
+    maxLlmCalls: int = Field(default=10, ge=1, le=30)
+    maxSeconds: float = Field(default=90.0, ge=0, le=300)
+    persistMemory: bool = True
+
+
+class AgentStepOut(BaseModel):
+    index: int
+    thought: str = ""
+    action: str = ""
+    actionInput: Optional[Any] = None
+    observation: str = ""
+    elapsedMs: float = 0
+    llmCalls: int = 0
+
+
+class AgentMetricsOut(BaseModel):
+    steps: int
+    llmCalls: int
+    toolCalls: int
+    estimatedTokens: int
+    elapsedMs: float
+    stopReason: str
+    costUnits: float
+
+
+class AgentLoopRunOut(BaseModel):
+    mode: str
+    sessionId: str
+    task: str
+    answer: str
+    steps: list[AgentStepOut] = Field(default_factory=list)
+    sources: list[RAGSourceOut] = Field(default_factory=list)
+    metrics: AgentMetricsOut
+    memoriesUsed: list[str] = Field(default_factory=list)
+    memorySaved: Optional[str] = None
+    model: Optional[str] = None
+
+
+class AgentRaceOut(BaseModel):
+    task: str
+    sessionId: str
+    agent: AgentLoopRunOut
+    workflow: AgentLoopRunOut
+    winner: str
+    ship: str
+    rationale: str
+    comparison: dict[str, Any]
+
+
+class AgentMemoryEntryOut(BaseModel):
+    id: str
+    sessionId: str
+    createdAt: str
+    task: str
+    summary: str
+    facts: list[str] = Field(default_factory=list)
+
+
+class AgentMemoryListOut(BaseModel):
+    sessionId: Optional[str] = None
+    items: list[AgentMemoryEntryOut]

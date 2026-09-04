@@ -30,6 +30,11 @@ export const routes: Routes = [
           import('./features/chat/chat.component').then((m) => m.ChatComponent),
       },
       {
+        path: 'agent',
+        loadComponent: () =>
+          import('./features/agent/agent.component').then((m) => m.AgentComponent),
+      },
+      {
         path: 'conversations',
         loadComponent: () =>
           import('./features/conversations/conversations.component').then(

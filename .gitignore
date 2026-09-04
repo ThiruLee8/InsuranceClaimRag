@@ -47,6 +47,7 @@ docker-data/
 backend/.chroma/
 backend/tmp/
 *.tmp
+backend/data/agent_memory.json
 
 # OS
 Desktop.ini

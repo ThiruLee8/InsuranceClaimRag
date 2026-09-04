@@ -56,6 +56,12 @@ class Settings(BaseSettings):
     enable_trace_logging: bool = True
     traces_dir: str = ""  # empty → eval/error_analysis/traces (local) or /app/data/traces
 
+    # Hand-rolled claims agent (ReAct loop + workflow race)
+    agent_max_steps: int = 8
+    agent_max_llm_calls: int = 10
+    agent_max_seconds: float = 90.0
+    agent_memory_path: str = ""  # empty → backend/data/agent_memory.json
+
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000
