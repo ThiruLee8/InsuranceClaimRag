@@ -103,8 +103,8 @@ services:
         until ollama list >/dev/null 2>&1; do sleep 3; done
         echo "Pulling model $$OLLAMA_MODEL..."
         ollama pull "$$OLLAMA_MODEL"
-        echo "Warming model $$OLLAMA_MODEL..."
-        curl -s http://ollama:11434/api/generate -d "{\"model\":\"$$OLLAMA_MODEL\",\"prompt\":\"hi\",\"stream\":false,\"options\":{\"num_predict\":1}}" >/dev/null || true
+        echo "Warming model $$OLLAMA_MODEL (first CPU load can take several minutes)..."
+        ollama run "$$OLLAMA_MODEL" "OK"
         echo "Ollama model ready."
     networks:
       - insurance-rag-net
@@ -153,6 +153,8 @@ services:
         condition: service_started
       ollama:
         condition: service_started
+      ollama-init:
+        condition: service_completed_successfully
       document-processor:
         condition: service_started
     healthcheck:

@@ -45,6 +45,31 @@ class OllamaLLMService:
             payload["system"] = system
         return payload
 
+    @staticmethod
+    def _error_detail(response: httpx.Response) -> str:
+        try:
+            data = response.json()
+            if isinstance(data, dict) and data.get("error"):
+                return str(data["error"])
+        except Exception:  # noqa: BLE001
+            pass
+        return (response.text or "").strip()[:300]
+
+    def _raise_for_ollama(self, response: httpx.Response, *, model: str) -> None:
+        if response.is_success:
+            return
+        detail = self._error_detail(response)
+        if response.status_code == 404:
+            raise RuntimeError(
+                f"Ollama model '{model}' is not installed. "
+                f"From the project folder run: docker compose exec ollama ollama pull {model}"
+                + (f" ({detail})" if detail else "")
+            )
+        raise RuntimeError(
+            f"Ollama request failed with HTTP {response.status_code}"
+            + (f": {detail}" if detail else "")
+        )
+
     async def generate(
         self, *, prompt: str, system: str | None = None, model: str | None = None
     ) -> str:
@@ -52,9 +77,9 @@ class OllamaLLMService:
         payload = self._payload(prompt=prompt, system=system, model=model, stream=False)
 
         logger.info("ollama_request", model=selected_model, stream=False)
-        async with httpx.AsyncClient(timeout=180.0) as client:
+        async with httpx.AsyncClient(timeout=600.0) as client:
             response = await client.post(f"{self.base_url}/api/generate", json=payload)
-            response.raise_for_status()
+            self._raise_for_ollama(response, model=selected_model)
             data = response.json()
         answer = (data.get("response") or "").strip()
         logger.info("ollama_response_received", model=selected_model, chars=len(answer))
@@ -68,11 +93,13 @@ class OllamaLLMService:
 
         logger.info("ollama_request", model=selected_model, stream=True)
         chars = 0
-        async with httpx.AsyncClient(timeout=180.0) as client:
+        async with httpx.AsyncClient(timeout=600.0) as client:
             async with client.stream(
                 "POST", f"{self.base_url}/api/generate", json=payload
             ) as response:
-                response.raise_for_status()
+                if response.status_code >= 400:
+                    await response.aread()
+                self._raise_for_ollama(response, model=selected_model)
                 async for line in response.aiter_lines():
                     if not line.strip():
                         continue
@@ -110,6 +137,16 @@ class OllamaLLMService:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(f"{self.base_url}/api/tags")
                 response.raise_for_status()
+                data = response.json()
+            names = {
+                str(item.get("name") or "").strip()
+                for item in (data.get("models") or [])
+                if item.get("name")
+            }
+            if self.model and not any(
+                name == self.model or name.startswith(f"{self.model}:") for name in names
+            ):
+                return "model_missing"
             return "ok"
         except Exception as exc:  # noqa: BLE001
             logger.error("ollama_health_failed", error=str(exc))
