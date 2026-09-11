@@ -191,6 +191,9 @@ export interface AgentLoopMeta {
   defaultMaxLlmCalls: number;
   defaultMaxSeconds: number;
   defaultModel: string;
+  guardrailsEnabled?: boolean;
+  residualRisks?: string[];
+  owasp?: { id: string; name: string; how: string }[];
 }
 
 export interface AgentStepItem {
@@ -201,6 +204,28 @@ export interface AgentStepItem {
   observation: string;
   elapsedMs: number;
   llmCalls: number;
+  flags?: string[];
+}
+
+export interface AgentVerdict {
+  failureModes?: string[];
+  injection?: {
+    detected: boolean;
+    blocked: boolean;
+    kind?: string | null;
+    snippets?: string[];
+  };
+  outputValidation?: { passed: boolean; reason: string };
+  sandbox?: {
+    allowedTools?: string[];
+    maxQueryChars?: number;
+    allowSaveMemory?: boolean;
+    allowNetwork?: boolean;
+    allowShell?: boolean;
+    allowFileWrite?: boolean;
+  };
+  guardrailsEnabled?: boolean;
+  residualRisks?: string[];
 }
 
 export interface AgentMetrics {
@@ -224,6 +249,7 @@ export interface AgentLoopRun {
   memoriesUsed: string[];
   memorySaved?: string | null;
   model?: string | null;
+  verdict?: AgentVerdict;
 }
 
 export interface AgentRaceComparisonMetric {

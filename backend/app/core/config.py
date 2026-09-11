@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     agent_max_llm_calls: int = 10
     agent_max_seconds: float = 90.0
     agent_memory_path: str = ""  # empty → backend/data/agent_memory.json
+    agent_guardrails_enabled: bool = True
+    agent_max_query_chars: int = 240
 
     # API
     api_host: str = "0.0.0.0"

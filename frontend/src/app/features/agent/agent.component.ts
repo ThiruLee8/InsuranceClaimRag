@@ -14,6 +14,7 @@ import {
   AgentRaceResult,
   AgentSampleTask,
   AgentStepItem,
+  AgentVerdict,
 } from '../../core/models/api.models';
 import { AgentLoopService } from '../../core/services/agent-loop.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -105,8 +106,57 @@ export class AgentComponent implements OnInit {
     this.form.patchValue({ task: sample.task });
     if (sample.id === 'checklist') this.mode = 'race';
     if (sample.id === 'investigate') this.mode = 'agent';
-    if (sample.id === 'simple') this.mode = 'race';
+    if (sample.id === 'simple') this.mode = 'agent';
     if (sample.id === 'memory') this.mode = 'agent';
+    if (sample.id === 'injection' || sample.id === 'direct-inject') {
+      this.mode = 'agent';
+    }
+  }
+
+  get verdict(): AgentVerdict | null {
+    return this.agentResult?.verdict || this.workflowResult?.verdict || null;
+  }
+
+  get residualRisks(): string[] {
+    return this.verdict?.residualRisks?.length
+      ? this.verdict.residualRisks
+      : this.meta?.residualRisks ?? [];
+  }
+
+  flagLabel(flag: string): string {
+    switch (flag) {
+      case 'indirect_injection':
+        return 'Indirect injection stripped';
+      case 'made_up_input':
+        return 'Sandbox rejected input';
+      case 'sandbox_memory_gated':
+        return 'Memory gated';
+      case 'sandbox_denied_tool':
+        return 'Tool denied';
+      default:
+        return flag;
+    }
+  }
+
+  failureModesText(modes: string[] | undefined): string {
+    return (modes || []).map((m) => this.failureModeLabel(m)).join(', ');
+  }
+
+  failureModeLabel(mode: string): string {
+    switch (mode) {
+      case 'loop':
+        return 'Loop';
+      case 'wrong_tool':
+        return 'Wrong tool';
+      case 'made_up_inputs':
+        return 'Made-up inputs';
+      case 'quiet_give_up':
+        return 'Quiet give-up';
+      case 'prompt_injection':
+        return 'Followed an injection';
+      default:
+        return mode;
+    }
   }
 
   setMode(mode: AgentLoopMode): void {
@@ -219,6 +269,10 @@ export class AgentComponent implements OnInit {
       default:
         return reason || '—';
     }
+  }
+
+  stepHasFlags(step: AgentStepItem): boolean {
+    return !!step.flags?.length;
   }
 
   private upsertStep(mode: string, step: AgentStepItem): void {

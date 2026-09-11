@@ -315,6 +315,18 @@
     background: #2f9e7a;
   }
 
+  &--flag {
+    padding-left: 0.4rem;
+    border-left: 3px solid rgba(196, 122, 42, 0.75);
+  }
+
+  &__flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+  }
+
   &__thought {
     font-size: 0.82rem;
     color: #5b7383;
@@ -392,6 +404,15 @@
     border-color: rgba(61, 184, 160, 0.35);
     background: rgba(61, 184, 160, 0.1);
   }
+
+  &--alert {
+    border-color: rgba(196, 122, 42, 0.4);
+    background: rgba(196, 122, 42, 0.08);
+  }
+
+  &--risk {
+    border-color: rgba(18, 50, 70, 0.12);
+  }
 }
 
 .ship-tag {
@@ -453,6 +474,54 @@
     font-size: 0.72rem;
     color: #5b7383;
     font-weight: 600;
+  }
+}
+
+.flag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: #7a4a12;
+  background: rgba(196, 122, 42, 0.16);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+
+.verdict-list,
+.risk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+    font-size: 0.82rem;
+    color: #1a3548;
+  }
+
+  strong {
+    font-size: 0.72rem;
+    color: #5b7383;
+    font-weight: 650;
+  }
+}
+
+.risk-list li {
+  padding-left: 0.7rem;
+  position: relative;
+
+  &::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    color: #c47a2a;
+    font-weight: 700;
   }
 }
 

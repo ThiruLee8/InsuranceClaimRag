@@ -15,6 +15,7 @@ from app.schemas import (
     AgentToolOut,
     ApiResponse,
 )
+from app.services.agent_guardrails import OWASP_LLM_TOP_10, RESIDUAL_RISKS
 from app.services.agent_loop import SAMPLE_TASKS, ClaimAgentRunner
 from app.services.agent_memory import AgentMemoryStore
 from app.services.agent_tools import TOOLS
@@ -36,6 +37,9 @@ async def agent_loop_meta():
             defaultMaxLlmCalls=settings.agent_max_llm_calls,
             defaultMaxSeconds=settings.agent_max_seconds,
             defaultModel=settings.ollama_model,
+            guardrailsEnabled=settings.agent_guardrails_enabled,
+            residualRisks=list(RESIDUAL_RISKS),
+            owasp=[{"id": x["id"], "name": x["name"], "how": x["how"]} for x in OWASP_LLM_TOP_10],
         )
     )
 

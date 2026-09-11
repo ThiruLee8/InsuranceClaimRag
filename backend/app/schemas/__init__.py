@@ -260,6 +260,9 @@ class AgentLoopMetaOut(BaseModel):
     defaultMaxLlmCalls: int
     defaultMaxSeconds: float
     defaultModel: str
+    guardrailsEnabled: bool = True
+    residualRisks: list[str] = Field(default_factory=list)
+    owasp: list[dict[str, str]] = Field(default_factory=list)
 
 
 class AgentLoopRunRequest(BaseModel):
@@ -281,6 +284,7 @@ class AgentStepOut(BaseModel):
     observation: str = ""
     elapsedMs: float = 0
     llmCalls: int = 0
+    flags: list[str] = Field(default_factory=list)
 
 
 class AgentMetricsOut(BaseModel):
@@ -304,6 +308,7 @@ class AgentLoopRunOut(BaseModel):
     memoriesUsed: list[str] = Field(default_factory=list)
     memorySaved: Optional[str] = None
     model: Optional[str] = None
+    verdict: dict[str, Any] = Field(default_factory=dict)
 
 
 class AgentRaceOut(BaseModel):

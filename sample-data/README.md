@@ -11,6 +11,10 @@ Suggested first upload:
 3. `policy-schedule.pdf`
 4. `claim-settlement-letter.pdf`
 
+Week 8 prompt-injection drill (optional extra file):
+
+5. `injected-adjuster-notes.txt` — looks like a real desk-review note, but contains a hidden instruction that tries to hijack the agent. Upload it, then on **Agent** pick **Poisoned document**.
+
 Then ask in Chat:
 
 - What was the cause of the loss?

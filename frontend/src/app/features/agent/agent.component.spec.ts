@@ -34,4 +34,22 @@ describe('AgentComponent', () => {
   it('defaults to race mode so the comparison is one click away', () => {
     expect(fixture.componentInstance.mode).toBe('race');
   });
+
+  it('switches to agent mode for injection and gap samples', () => {
+    const cmp = fixture.componentInstance;
+    cmp.useSample({
+      id: 'injection',
+      label: 'Poisoned document',
+      task: 'Read the notes',
+      why: 'hijack',
+    });
+    expect(cmp.mode).toBe('agent');
+    expect(cmp.form.value.task).toBe('Read the notes');
+  });
+
+  it('labels injection flags for the timeline', () => {
+    const cmp = fixture.componentInstance;
+    expect(cmp.flagLabel('indirect_injection')).toContain('injection');
+    expect(cmp.failureModeLabel('quiet_give_up')).toContain('give-up');
+  });
 });

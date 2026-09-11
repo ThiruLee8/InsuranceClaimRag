@@ -65,4 +65,4 @@ Results are written to `eval/results/<label>.json`.
 
 For a full **hand-read error analysis** (random sample → open coding → ranked problems → fix prediction), see [`error_analysis/README.md`](error_analysis/README.md).
 
-For **automatic answer evals** (assertions + optional LLM judge + before/after), see [`answer_evals/README.md`](answer_evals/README.md).
+For **agent trajectory evals** (path vs answer, prompt injection before/after), see [`trajectory_evals/README.md`](trajectory_evals/README.md).
