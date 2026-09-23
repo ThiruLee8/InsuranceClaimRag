@@ -64,6 +64,12 @@ class Settings(BaseSettings):
     agent_guardrails_enabled: bool = True
     agent_max_query_chars: int = 240
 
+    # MCP — standard socket from this host to tools/data (AI still runs here)
+    mcp_enabled: bool = True
+    mcp_auth_token: str = "dev-mcp-token"
+    mcp_allowed_tools: str = ""  # empty = trust own server after name/schema inspection
+    mcp_deny_tools: str = "shell,bash,exec,eval,fetch,http,email,write_file,delete_all"
+
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000
@@ -93,6 +99,14 @@ class Settings(BaseSettings):
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_size_mb * 1024 * 1024
+
+    @property
+    def mcp_allowed_tool_set(self) -> set[str]:
+        return {t.strip() for t in self.mcp_allowed_tools.split(",") if t.strip()}
+
+    @property
+    def mcp_deny_tool_set(self) -> set[str]:
+        return {t.strip().lower() for t in self.mcp_deny_tools.split(",") if t.strip()}
 
 
 @lru_cache

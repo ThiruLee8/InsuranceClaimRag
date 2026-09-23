@@ -15,6 +15,7 @@ import {
   AgentSampleTask,
   AgentStepItem,
   AgentVerdict,
+  McpStatus,
 } from '../../core/models/api.models';
 import { AgentLoopService } from '../../core/services/agent-loop.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -47,11 +48,13 @@ export class AgentComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   meta: AgentLoopMeta | null = null;
-  mode: AgentLoopMode = 'race';
+  mode: AgentLoopMode = 'agent';
   running = false;
   activeRunMode: string | null = null;
   sessionId = AgentComponent.readOrCreateSession();
   memories: AgentMemoryItem[] = [];
+  mcp: McpStatus | null = null;
+  rediscovering = false;
 
   agentSteps: AgentStepItem[] = [];
   workflowSteps: AgentStepItem[] = [];
@@ -83,10 +86,12 @@ export class AgentComponent implements OnInit {
           maxLlmCalls: meta.defaultMaxLlmCalls,
           maxSeconds: meta.defaultMaxSeconds,
         });
-        const first = meta.sampleTasks[0];
+        const first = meta.sampleTasks.find((s) => s.id === 'mcp-status') || meta.sampleTasks[0];
         if (first && !this.form.value.task) {
           this.form.patchValue({ task: first.task });
         }
+        this.mcp = meta.mcp ?? null;
+        if (this.mcp) this.applyMcp(this.mcp);
       },
     });
     this.refreshMemory();
@@ -111,6 +116,7 @@ export class AgentComponent implements OnInit {
     if (sample.id === 'injection' || sample.id === 'direct-inject') {
       this.mode = 'agent';
     }
+    if (sample.id === 'mcp-status') this.mode = 'agent';
   }
 
   get verdict(): AgentVerdict | null {
@@ -195,6 +201,10 @@ export class AgentComponent implements OnInit {
             this.activeRunMode = event.mode;
             return;
           }
+          if (event.type === 'mcp') {
+            this.applyMcp(event.mcp);
+            return;
+          }
           if (event.type === 'step') {
             this.upsertStep(event.mode, event.step);
             this.scrollSteps();
@@ -240,6 +250,58 @@ export class AgentComponent implements OnInit {
     localStorage.setItem(SESSION_KEY, this.sessionId);
     this.memories = [];
     this.notifications.success('New session — memory starts empty');
+  }
+
+  rediscover(): void {
+    if (this.running || this.rediscovering) return;
+    this.rediscovering = true;
+    this.agentService.rediscoverMcp().subscribe({
+      next: (mcp) => {
+        this.applyMcp(mcp);
+        this.rediscovering = false;
+        this.notifications.success(
+          `Discovered ${mcp.tools.filter((t) => t.trusted).length} trusted MCP tool(s)`
+        );
+      },
+      error: () => {
+        this.rediscovering = false;
+        this.notifications.error('MCP rediscovery failed');
+      },
+    });
+  }
+
+  handshakeText(entry: { direction: string; method: string; message: Record<string, unknown> }): string {
+    return JSON.stringify(entry.message, null, 2);
+  }
+
+  roleEntries(): { id: string; text: string }[] {
+    const roles = this.mcp?.roles || {};
+    return Object.entries(roles).map(([id, text]) => ({ id, text }));
+  }
+
+  private applyMcp(mcp: McpStatus): void {
+    this.mcp = mcp;
+    if (!this.meta) return;
+    const discovered = mcp.tools.filter((t) => t.trusted !== false);
+    const hasFinish = discovered.some((t) => t.name === 'finish');
+    this.meta = {
+      ...this.meta,
+      mcp,
+      tools: hasFinish
+        ? discovered
+        : [
+            ...discovered,
+            {
+              name: 'finish',
+              description: 'End the loop on the host and answer the user.',
+              parameters: '{"answer": "final answer"}',
+              server: 'host',
+              trusted: true,
+              trustReason: 'loop control stays on the host',
+              source: 'host',
+            },
+          ],
+    };
   }
 
   actionInputText(value: unknown): string {

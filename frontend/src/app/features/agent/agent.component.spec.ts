@@ -31,8 +31,8 @@ describe('AgentComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('defaults to race mode so the comparison is one click away', () => {
-    expect(fixture.componentInstance.mode).toBe('race');
+  it('defaults to agent mode so MCP tool calls are one click away', () => {
+    expect(fixture.componentInstance.mode).toBe('agent');
   });
 
   it('switches to agent mode for injection and gap samples', () => {
@@ -47,9 +47,15 @@ describe('AgentComponent', () => {
     expect(cmp.form.value.task).toBe('Read the notes');
   });
 
-  it('labels injection flags for the timeline', () => {
+  it('switches to agent mode for the MCP status sample', () => {
     const cmp = fixture.componentInstance;
-    expect(cmp.flagLabel('indirect_injection')).toContain('injection');
-    expect(cmp.failureModeLabel('quiet_give_up')).toContain('give-up');
+    cmp.useSample({
+      id: 'mcp-status',
+      label: 'MCP tool (file status)',
+      task: 'Report file status',
+      why: 'discovered',
+    });
+    expect(cmp.mode).toBe('agent');
+    expect(cmp.form.value.task).toBe('Report file status');
   });
 });

@@ -175,6 +175,28 @@ export interface AgentToolItem {
   name: string;
   description: string;
   parameters: string;
+  server?: string | null;
+  trusted?: boolean;
+  trustReason?: string | null;
+  source?: string;
+}
+
+export interface McpStatus {
+  enabled: boolean;
+  transport: string;
+  serverName: string;
+  connected: boolean;
+  whereAiRuns: string;
+  whereAiDoesNotRun: string;
+  endpoint: string;
+  stdio: string;
+  authRequired: boolean;
+  tools: AgentToolItem[];
+  resources: string[];
+  prompts: string[];
+  handshake: { direction: string; method: string; message: Record<string, unknown> }[];
+  lastError?: string | null;
+  roles: Record<string, string>;
 }
 
 export interface AgentSampleTask {
@@ -194,6 +216,7 @@ export interface AgentLoopMeta {
   guardrailsEnabled?: boolean;
   residualRisks?: string[];
   owasp?: { id: string; name: string; how: string }[];
+  mcp?: McpStatus | null;
 }
 
 export interface AgentStepItem {
@@ -297,4 +320,5 @@ export type AgentLoopStreamEvent =
   | { type: 'done'; mode: string; result: AgentLoopRun }
   | { type: 'race_start'; sessionId: string; task: string }
   | { type: 'race'; result: AgentRaceResult }
+  | { type: 'mcp'; mcp: McpStatus }
   | { type: 'error'; message: string };

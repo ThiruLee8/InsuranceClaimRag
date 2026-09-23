@@ -17,8 +17,21 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 
+def _load_mcp_http():
+    try:
+        from app.mcp.http_app import build_mcp_http_app
+
+        return build_mcp_http_app()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("mcp_http_unavailable", error=str(exc))
+        return None, None
+
+
+mcp_mount, mcp_inner = _load_mcp_http()
+
+
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(app: FastAPI):
     logger.info("application_startup")
     try:
         BlobService().ensure_container()
@@ -30,13 +43,37 @@ async def lifespan(_: FastAPI):
         DocumentQueueService().ensure_queue()
     except Exception as exc:  # noqa: BLE001
         logger.warning("queue_init_failed", error=str(exc))
-    yield
-    logger.info("application_shutdown")
+
+    inner_cm = None
+    if mcp_inner is not None and getattr(mcp_inner, "lifespan", None) is not None:
+        inner_cm = mcp_inner.lifespan(app)
+        await inner_cm.__aenter__()
+
+    if settings.mcp_enabled:
+        try:
+            from app.mcp.gateway import get_shared_gateway
+
+            await get_shared_gateway().ensure_connected()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("mcp_host_connect_failed", error=str(exc))
+
+    try:
+        yield
+    finally:
+        try:
+            from app.mcp.gateway import get_shared_gateway
+
+            await get_shared_gateway().close()
+        except Exception:  # noqa: BLE001
+            pass
+        if inner_cm is not None:
+            await inner_cm.__aexit__(None, None, None)
+        logger.info("application_shutdown")
 
 
 app = FastAPI(
     title="Insurance Claims RAG API",
-    description="Document Q&A for insurance claims using RAG",
+    description="Document Q&A for insurance claims using RAG. MCP tools are at /mcp.",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -50,6 +87,9 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api")
+if mcp_mount is not None:
+    app.mount("/mcp", mcp_mount)
+    logger.info("mcp_http_mounted", path="/mcp")
 
 
 @app.exception_handler(StarletteHTTPException)

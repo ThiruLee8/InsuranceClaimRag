@@ -10,6 +10,7 @@ import {
   AgentMemoryList,
   AgentRaceResult,
   ApiResponse,
+  McpStatus,
 } from '../models/api.models';
 
 export interface AgentLoopRunOptions {
@@ -31,6 +32,12 @@ export class AgentLoopService {
   getMeta(): Observable<AgentLoopMeta> {
     return this.http
       .get<ApiResponse<AgentLoopMeta>>(`${this.baseUrl}/meta`)
+      .pipe(map((res) => res.data!));
+  }
+
+  rediscoverMcp(): Observable<McpStatus> {
+    return this.http
+      .post<ApiResponse<McpStatus>>(`${environment.apiBaseUrl}/mcp/rediscover`, {})
       .pipe(map((res) => res.data!));
   }
 

@@ -244,6 +244,28 @@ class AgentToolOut(BaseModel):
     name: str
     description: str
     parameters: str
+    server: Optional[str] = None
+    trusted: bool = True
+    trustReason: Optional[str] = None
+    source: str = "mcp"
+
+
+class McpStatusOut(BaseModel):
+    enabled: bool
+    transport: str
+    serverName: str
+    connected: bool = False
+    whereAiRuns: str
+    whereAiDoesNotRun: str
+    endpoint: str
+    stdio: str = "python -m app.mcp"
+    authRequired: bool = True
+    tools: list[AgentToolOut] = Field(default_factory=list)
+    resources: list[str] = Field(default_factory=list)
+    prompts: list[str] = Field(default_factory=list)
+    handshake: list[dict[str, Any]] = Field(default_factory=list)
+    lastError: Optional[str] = None
+    roles: dict[str, str] = Field(default_factory=dict)
 
 
 class AgentSampleTaskOut(BaseModel):
@@ -263,6 +285,7 @@ class AgentLoopMetaOut(BaseModel):
     guardrailsEnabled: bool = True
     residualRisks: list[str] = Field(default_factory=list)
     owasp: list[dict[str, str]] = Field(default_factory=list)
+    mcp: Optional[McpStatusOut] = None
 
 
 class AgentLoopRunRequest(BaseModel):

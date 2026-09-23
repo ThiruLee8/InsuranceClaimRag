@@ -38,4 +38,34 @@ describe('AgentLoopService', () => {
       },
     });
   });
+
+  it('posts MCP rediscover', () => {
+    service.rediscoverMcp().subscribe((mcp) => {
+      expect(mcp.serverName).toBe('claims-docs');
+      expect(mcp.tools.length).toBe(1);
+    });
+
+    const req = http.expectOne(`${environment.apiBaseUrl}/mcp/rediscover`);
+    expect(req.request.method).toBe('POST');
+    req.flush({
+      success: true,
+      message: 'OK',
+      data: {
+        enabled: true,
+        transport: 'memory',
+        serverName: 'claims-docs',
+        connected: true,
+        whereAiRuns: 'host',
+        whereAiDoesNotRun: 'server',
+        endpoint: '/mcp',
+        stdio: 'python -m app.mcp',
+        authRequired: true,
+        tools: [{ name: 'list_documents', description: 'List', parameters: '{}' }],
+        resources: [],
+        prompts: [],
+        handshake: [],
+        roles: {},
+      },
+    });
+  });
 });

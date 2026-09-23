@@ -217,6 +217,17 @@ uvicorn app.main:app --reload --port 8000
 ### Health
 - `GET /api/health`
 
+### MCP (Model Context Protocol)
+The claims agent discovers tools over MCP instead of a hard-coded list. The **AI runs on this host** (FastAPI + Ollama), never on the tool server.
+
+| How to connect | Where |
+|---|---|
+| Another agent (HTTP) | `http://localhost:8000/mcp` with `Authorization: Bearer <MCP_AUTH_TOKEN>` |
+| stdio (Claude Desktop / Cursor) | `python -m app.mcp` from `backend/` |
+| This app's agent | in-memory FastMCP client (same process) |
+
+Tools live in `backend/app/mcp/claims_server.py`. Add `@mcp.tool` there and click **Rediscover** on the Agent page — the agent loop does not need a code change.
+
 ### Documents
 - `GET /api/documents`
 - `GET /api/documents/{id}`

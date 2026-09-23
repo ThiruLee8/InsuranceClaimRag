@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse
 from app.api.dependencies import get_claim_agent_runner
 from app.core.config import get_settings
 from app.core.exceptions import raise_http
+from app.mcp.gateway import get_shared_gateway
 from app.schemas import (
     AgentLoopMetaOut,
     AgentLoopRunRequest,
@@ -14,6 +15,7 @@ from app.schemas import (
     AgentSampleTaskOut,
     AgentToolOut,
     ApiResponse,
+    McpStatusOut,
 )
 from app.services.agent_guardrails import OWASP_LLM_TOP_10, RESIDUAL_RISKS
 from app.services.agent_loop import SAMPLE_TASKS, ClaimAgentRunner
@@ -26,12 +28,72 @@ router = APIRouter(prefix="/agent-loop", tags=["agent-loop"])
 @router.get("/meta", response_model=ApiResponse[AgentLoopMetaOut])
 async def agent_loop_meta():
     settings = get_settings()
+    mcp_out: McpStatusOut | None = None
+    tools = [
+        AgentToolOut(name=t.name, description=t.description, parameters=t.parameters, source="local")
+        for t in TOOLS
+    ]
+    if settings.mcp_enabled:
+        try:
+            gw = get_shared_gateway()
+            await gw.ensure_connected()
+            payload = gw.status_dict()
+            mcp_out = McpStatusOut(
+                enabled=True,
+                transport=payload["transport"],
+                serverName=payload["serverName"],
+                connected=payload["connected"],
+                whereAiRuns=payload["whereAiRuns"],
+                whereAiDoesNotRun=payload["whereAiDoesNotRun"],
+                endpoint=payload["endpoint"],
+                stdio=payload["stdio"],
+                authRequired=payload["authRequired"],
+                tools=[AgentToolOut(**t) for t in payload["tools"]],
+                resources=payload["resources"],
+                prompts=payload["prompts"],
+                handshake=payload["handshake"],
+                lastError=payload["lastError"],
+                roles=payload["roles"],
+            )
+            if gw.trusted_tools:
+                tools = [
+                    AgentToolOut(
+                        name=t.name,
+                        description=t.description,
+                        parameters=t.parameters,
+                        server=t.server,
+                        trusted=t.trusted,
+                        trustReason=t.trust_reason,
+                        source="mcp",
+                    )
+                    for t in gw.trusted_tools
+                ]
+                tools.append(
+                    AgentToolOut(
+                        name="finish",
+                        description="End the loop on the host and answer the user.",
+                        parameters='{"answer": "final answer"}',
+                        server="host",
+                        trusted=True,
+                        trustReason="loop control stays on the host",
+                        source="host",
+                    )
+                )
+        except Exception as exc:  # noqa: BLE001
+            mcp_out = McpStatusOut(
+                enabled=True,
+                transport="memory",
+                serverName="claims-docs",
+                connected=False,
+                whereAiRuns="On the host — this ClaimIntel app, which calls Ollama.",
+                whereAiDoesNotRun="The MCP server only offers tools. It does not run the model.",
+                endpoint="/mcp",
+                authRequired=bool(settings.mcp_auth_token),
+                lastError=str(exc),
+            )
     return ApiResponse(
         data=AgentLoopMetaOut(
-            tools=[
-                AgentToolOut(name=t.name, description=t.description, parameters=t.parameters)
-                for t in TOOLS
-            ],
+            tools=tools,
             sampleTasks=[AgentSampleTaskOut(**item) for item in SAMPLE_TASKS],
             defaultMaxSteps=settings.agent_max_steps,
             defaultMaxLlmCalls=settings.agent_max_llm_calls,
@@ -40,6 +102,7 @@ async def agent_loop_meta():
             guardrailsEnabled=settings.agent_guardrails_enabled,
             residualRisks=list(RESIDUAL_RISKS),
             owasp=[{"id": x["id"], "name": x["name"], "how": x["how"]} for x in OWASP_LLM_TOP_10],
+            mcp=mcp_out,
         )
     )
 

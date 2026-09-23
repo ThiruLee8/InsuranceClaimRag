@@ -132,8 +132,9 @@ class SandboxPolicy:
 DEFAULT_SANDBOX = SandboxPolicy()
 
 LEAST_PRIVILEGE_NOTES = [
-    "Tools are a fixed allow-list: list, search documents, search/save memory, finish.",
-    "No shell, no HTTP fetch, no email, no file write — the agent cannot grow new tools at runtime.",
+    "MCP tools are discovered, then inspected: dangerous names and unsafe parameters are blocked.",
+    "finish stays on the host. The model never runs on the MCP server.",
+    "No shell, no HTTP fetch, no email, no file write — those names are always denied.",
     "search_documents is read-only and query length is capped so a document cannot dump a jailbreak into the next call.",
     "save_memory is disabled for the rest of a run after untrusted instructions are seen, and never stores instruction-like text.",
 ]
@@ -144,6 +145,7 @@ RESIDUAL_RISKS = [
     "Lucky retrieval: the right answer from the wrong file still looks correct until that file changes.",
     "No per-claim access control: search_documents can read any file uploaded in this tenant.",
     "A cooperative model can still paraphrase an injected ask in a way the output check does not catch.",
+    "A remote MCP server you did not inspect can advertise a helpful-looking tool that is not safe to call.",
 ]
 
 OWASP_LLM_TOP_10 = [
@@ -157,11 +159,11 @@ OWASP_LLM_TOP_10 = [
         "name": "Sensitive Information Disclosure",
         "how": "Refuse answers that echo the system prompt; memory store does not persist injection text.",
     },
-    {
-        "id": "LLM03",
-        "name": "Supply Chain",
-        "how": "Not in this week's fix. Models and packages are still a trust boundary.",
-    },
+        {
+            "id": "LLM03",
+            "name": "Supply Chain",
+            "how": "MCP servers are untrusted until inspected. Dangerous tool names are denied; remote tools need an allow-list.",
+        },
     {
         "id": "LLM04",
         "name": "Data and Model Poisoning",
@@ -172,11 +174,11 @@ OWASP_LLM_TOP_10 = [
         "name": "Improper Output Handling",
         "how": "Finish answers are checked before they reach the user; UI renders markdown, not raw tool JSON as commands.",
     },
-    {
-        "id": "LLM06",
-        "name": "Excessive Agency",
-        "how": "Least-privilege sandbox: no network/shell/file tools; save_memory gated after an injection.",
-    },
+        {
+            "id": "LLM06",
+            "name": "Excessive Agency",
+            "how": "Least-privilege sandbox over discovered MCP tools; no network/shell/file tools; save_memory gated after an injection.",
+        },
     {
         "id": "LLM07",
         "name": "System Prompt Leakage",

@@ -64,6 +64,14 @@ TOOLS: list[ToolSpec] = [
         parameters='{"fact": "one sentence fact"}',
     ),
     ToolSpec(
+        name="document_status",
+        description=(
+            "Return processing status for uploaded claim files (Processed, Failed, page/chunk counts). "
+            "Pass a file name to focus on one document, or omit it for a rollup of all files."
+        ),
+        parameters='{"file_name": "optional file name"}',
+    ),
+    ToolSpec(
         name="finish",
         description=(
             "End the loop and answer the user. Cite document names and pages when possible. "
@@ -74,11 +82,12 @@ TOOLS: list[ToolSpec] = [
 ]
 
 TOOL_NAMES = {spec.name for spec in TOOLS}
+LOCAL_LOOP_TOOLS = {"finish"}
 
 
-def tools_prompt_block() -> str:
+def tools_prompt_block(specs: list[ToolSpec] | None = None) -> str:
     lines = []
-    for spec in TOOLS:
+    for spec in specs or TOOLS:
         lines.append(f"- {spec.name}")
         lines.append(f"  description: {spec.description}")
         lines.append(f"  action_input: {spec.parameters}")
@@ -120,6 +129,8 @@ def execute_tool(name: str, action_input: Any, ctx: ToolContext) -> str:
         return _search_memory(_as_query(action_input), ctx)
     if name == "save_memory":
         return _save_memory(_as_query(action_input, "fact"), ctx)
+    if name == "document_status":
+        return _document_status(_as_query(action_input, "file_name"), ctx)
     if name == "finish":
         return "finish"
     return f"Unknown tool '{name}'. Valid tools: {', '.join(sorted(TOOL_NAMES))}."
@@ -187,3 +198,26 @@ def _save_memory(fact: str, ctx: ToolContext) -> str:
         return "Memory is unavailable in this run."
     entry = ctx.memory.add_fact(session_id=ctx.session_id, fact=fact, task=ctx.task)
     return f"Saved memory {entry.id}: {fact}"
+
+
+def _document_status(file_name: str, ctx: ToolContext) -> str:
+    if ctx.document_repo is None:
+        return "Document status is unavailable in this run."
+    try:
+        search = file_name.strip() or None
+        items, total = ctx.document_repo.list(search=search, limit=50)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("agent_document_status_failed", error=str(exc))
+        return f"Could not read document status: {exc}"
+    if not items:
+        if file_name:
+            return f"No uploaded file matched '{file_name}'."
+        return "No documents are uploaded yet."
+    lines = [f"{total} document(s):"]
+    for doc in items:
+        status = doc.Status.value if hasattr(doc.Status, "value") else str(doc.Status)
+        pages = doc.PageCount if doc.PageCount is not None else "?"
+        err = getattr(doc, "ProcessingError", None)
+        extra = f" error={err}" if err else ""
+        lines.append(f"- {doc.OriginalFileName}: {status}, {pages} pages{extra}")
+    return "\n".join(lines)

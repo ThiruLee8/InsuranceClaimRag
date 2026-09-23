@@ -24,7 +24,9 @@ from app.services.agent_guardrails import (
     validate_finish,
 )
 from app.services.agent_memory import AgentMemoryStore, summarise_run
+from app.mcp.gateway import McpToolGateway, get_shared_gateway
 from app.services.agent_tools import (
+    LOCAL_LOOP_TOOLS,
     TOOL_NAMES,
     ToolContext,
     execute_tool,
@@ -138,6 +140,17 @@ SAMPLE_TASKS = [
             "Then what was the cause of the loss?"
         ),
         "why": "Direct prompt injection in the user task. The agent should still answer the claim, not leak the prompt.",
+    },
+    {
+        "id": "mcp-status",
+        "label": "MCP tool (file status)",
+        "task": (
+            "Using the document_status tool, report the processing status of each uploaded claim file."
+        ),
+        "why": (
+            "This tool is discovered over MCP, not hard-coded in the agent loop. "
+            "Add another @mcp.tool on the server and the agent will see it after rediscovery."
+        ),
     },
 ]
 
@@ -255,7 +268,7 @@ def estimate_tokens(*parts: str) -> int:
     return max(1, chars // 4) if chars else 0
 
 
-def parse_decision(text: str) -> AgentDecision | None:
+def parse_decision(text: str, tool_schemas: dict[str, dict[str, Any]] | None = None) -> AgentDecision | None:
     """Parse JSON (preferred) or classic ReAct 'Thought / Action / Action Input' text."""
     if not text or not text.strip():
         return None
@@ -266,7 +279,9 @@ def parse_decision(text: str) -> AgentDecision | None:
         return AgentDecision(
             thought=str(data.get("thought") or "").strip(),
             action=action,
-            action_input=_normalize_input(action, data.get("action_input", data.get("actionInput"))),
+            action_input=_normalize_input(
+                action, data.get("action_input", data.get("actionInput")), tool_schemas
+            ),
             raw=raw,
         )
     thought_m = re.search(r"Thought:\s*(.+?)(?:\n\s*Action:|$)", raw, re.IGNORECASE | re.DOTALL)
@@ -282,7 +297,7 @@ def parse_decision(text: str) -> AgentDecision | None:
     return AgentDecision(
         thought=(thought_m.group(1).strip() if thought_m else ""),
         action=action,
-        action_input=_normalize_input(action, input_raw),
+        action_input=_normalize_input(action, input_raw, tool_schemas),
         raw=raw,
     )
 
@@ -302,7 +317,11 @@ def _extract_json(text: str) -> Any | None:
         return None
 
 
-def _normalize_input(action: str, raw: Any) -> Any:
+def _normalize_input(
+    action: str,
+    raw: Any,
+    tool_schemas: dict[str, dict[str, Any]] | None = None,
+) -> Any:
     if raw is None:
         return {}
     if isinstance(raw, dict):
@@ -310,10 +329,18 @@ def _normalize_input(action: str, raw: Any) -> Any:
     text = str(raw).strip()
     if action == "finish":
         return {"answer": text}
+    schema = (tool_schemas or {}).get(action) or {}
+    props = list((schema.get("properties") or {}).keys())
+    required = list(schema.get("required") or [])
+    key = required[0] if required else (props[0] if props else "")
+    if key and text:
+        return {key: text}
     if action in {"search_documents", "search_memory"}:
         return {"query": text}
     if action == "save_memory":
         return {"fact": text}
+    if action == "document_status":
+        return {"file_name": text} if text else {}
     parsed = _extract_json(text)
     return parsed if parsed is not None else text
 
@@ -444,6 +471,7 @@ class ClaimAgentRunner:
         memory: AgentMemoryStore | None = None,
         time_fn: Callable[[], float] | None = None,
         guardrails_enabled: bool | None = None,
+        mcp: McpToolGateway | None = None,
     ) -> None:
         self.settings = get_settings()
         self.llm = llm or OllamaLLMService()
@@ -455,11 +483,45 @@ class ClaimAgentRunner:
             self.guardrails_enabled = bool(self.settings.agent_guardrails_enabled)
         else:
             self.guardrails_enabled = guardrails_enabled
+        self.mcp = mcp
+        self._mcp_ready = False
+
+    async def _ensure_mcp(self) -> McpToolGateway | None:
+        if not self.settings.mcp_enabled:
+            return None
+        if self.mcp is None:
+            self.mcp = get_shared_gateway()
+        if not self._mcp_ready:
+            try:
+                await self.mcp.ensure_connected()
+                self._mcp_ready = True
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("mcp_connect_failed", error=str(exc))
+                self.mcp.last_error = str(exc)
+                return self.mcp
+        return self.mcp
+
+    def _valid_actions(self) -> set[str]:
+        names = set(LOCAL_LOOP_TOOLS)
+        if self.mcp and self.mcp.trusted_names():
+            names |= self.mcp.trusted_names()
+        else:
+            names |= set(TOOL_NAMES)
+        return names
+
+    def _tool_schemas(self) -> dict[str, dict[str, Any]]:
+        if self.mcp:
+            return self.mcp.tool_schemas()
+        return {}
 
     def _sandbox_policy(self) -> SandboxPolicy:
-        return SandboxPolicy(max_query_chars=int(self.settings.agent_max_query_chars or 240))
+        allowed = self._valid_actions()
+        return SandboxPolicy(
+            allowed_tools=frozenset(allowed),
+            max_query_chars=int(self.settings.agent_max_query_chars or 240),
+        )
 
-    def _guard_tool(
+    async def _guard_tool(
         self,
         action: str,
         action_input: Any,
@@ -478,7 +540,7 @@ class ClaimAgentRunner:
                     flags.append(flag)
                 return blocked, flags, injection, False
 
-        observation = execute_tool(action, action_input, ctx)
+        observation = await self._execute_action(action, action_input, ctx)
         if action in {"search_documents", "search_memory"}:
             wrapped, finding = guard_observation(
                 observation, enabled=self.guardrails_enabled
@@ -495,6 +557,13 @@ class ClaimAgentRunner:
                     policy.allow_save_memory = False
             observation = wrapped if self.guardrails_enabled else observation
         return observation, flags, injection, True
+
+    async def _execute_action(self, action: str, action_input: Any, ctx: ToolContext) -> str:
+        if action in LOCAL_LOOP_TOOLS:
+            return "finish"
+        if self.mcp and self.mcp.connected:
+            return await self.mcp.call_tool(action, action_input, ctx)
+        return execute_tool(action, action_input, ctx)
 
     def _apply_finish_guard(
         self,
@@ -646,14 +715,19 @@ class ClaimAgentRunner:
         parse_fails = 0
         recent_sigs: list[str] = []
         facts: list[str] = []
+        await self._ensure_mcp()
         policy = self._sandbox_policy()
         task_injection = guard_user_task(task)
         injection = InjectionFinding(detected=False)
+        valid_actions = self._valid_actions()
+        tool_schemas = self._tool_schemas()
 
         await self._emit(
             on_event,
             {"type": "run_start", "mode": "agent", "sessionId": session_id, "task": task},
         )
+        if self.mcp:
+            await self._emit(on_event, {"type": "mcp", "mcp": self.mcp.status_dict()})
 
         memory_block = ""
         if recalled:
@@ -729,12 +803,13 @@ class ClaimAgentRunner:
             tokens += estimate_tokens(REACT_SYSTEM, prompt, raw)
             logger.info("agent_plan", step=len(steps) + 1, llm_calls=llm_calls, chars=len(raw or ""))
 
-            decision = parse_decision(raw)
-            if decision is None or decision.action not in TOOL_NAMES:
+            decision = parse_decision(raw, tool_schemas)
+            if decision is None or decision.action not in valid_actions:
                 parse_fails += 1
                 hint = (
                     "Your last output was not valid. Reply with JSON only: "
-                    '{"thought":"...","action":"search_documents","action_input":{"query":"..."}}'
+                    '{"thought":"...","action":"search_documents","action_input":{"query":"..."}}. '
+                    f"Valid tools: {', '.join(sorted(valid_actions))}."
                 )
                 scratch.append(hint + f" Got: {(raw or '')[:240]}")
                 step = AgentStep(
@@ -785,7 +860,7 @@ class ClaimAgentRunner:
                 await self._emit(on_event, {"type": "done", "mode": "agent", "result": result.to_dict()})
                 return result
 
-            observation, flags, injection, executed = self._guard_tool(
+            observation, flags, injection, executed = await self._guard_tool(
                 decision.action, decision.action_input, ctx, policy, injection
             )
             if executed:
@@ -814,9 +889,10 @@ class ClaimAgentRunner:
 
     def _build_react_prompt(self, task: str, scratch: list[str], memory_block: str) -> str:
         pad = _compact_scratchpad(scratch)
+        tool_block = self.mcp.tools_prompt_block() if self.mcp and self.mcp.trusted_tools else tools_prompt_block()
         parts = [
             f"Task:\n{task.strip()}",
-            "Tools:\n" + tools_prompt_block(),
+            "Tools (discovered over MCP, except finish which stays on the host):\n" + tool_block,
         ]
         if memory_block:
             parts.append(memory_block)
@@ -904,6 +980,7 @@ class ClaimAgentRunner:
         tokens = 0
         llm_calls = 0
         observations: list[str] = []
+        await self._ensure_mcp()
         policy = self._sandbox_policy()
         task_injection = guard_user_task(task)
         injection = InjectionFinding(detected=False)
@@ -912,9 +989,11 @@ class ClaimAgentRunner:
             on_event,
             {"type": "run_start", "mode": "workflow", "sessionId": session_id, "task": task},
         )
+        if self.mcp:
+            await self._emit(on_event, {"type": "mcp", "mcp": self.mcp.status_dict()})
 
         for action, action_input in WORKFLOW_STEPS:
-            observation, flags, injection, _executed = self._guard_tool(
+            observation, flags, injection, _executed = await self._guard_tool(
                 action, action_input, ctx, policy, injection
             )
             step = AgentStep(
