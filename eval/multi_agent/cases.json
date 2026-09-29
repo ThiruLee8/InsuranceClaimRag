@@ -1,0 +1,33 @@
+{
+  "description": "Same questions for the single ReAct agent and the specialist team. Quality is the fraction of fact-groups present in the answer.",
+  "cases": [
+    {
+      "id": "simple-cause",
+      "label": "One fact",
+      "task": "What was the cause of the loss?",
+      "must_contain_any": [["burst", "supply line"]],
+      "why": "One specialist against one ReAct loop. The hand-off pastes the question again."
+    },
+    {
+      "id": "parallel-brief",
+      "label": "Three independent facts",
+      "task": "Report three things: the cause of the loss, the all-peril deductible, and the net settlement amount.",
+      "must_contain_any": [["burst", "supply line"], ["1,000", "1000"], ["19,550", "19550"]],
+      "why": "Three independent facts. Specialists can run together. Each still receives the full task."
+    },
+    {
+      "id": "coverage-only",
+      "label": "Coverage only",
+      "task": "Is flood excluded, and what is the water backup endorsement limit?",
+      "must_contain_any": [["flood"], ["10,000", "10000"]],
+      "why": "Only coverage matches. The manager should not call the other specialists."
+    },
+    {
+      "id": "branching",
+      "label": "Cause, then coverage, then money",
+      "task": "Investigate this claim. First find the cause of loss. If it is water-related, check whether flood or gradual seepage is excluded and whether a water backup endorsement exists. Then give the contractor repair estimate and the net settlement.",
+      "must_contain_any": [["burst", "supply line"], ["flood"], ["18,450", "18450"], ["19,550", "19550"]],
+      "why": "Later steps depend on the cause, so the specialists run in order and each still receives the full task."
+    }
+  ]
+}

@@ -1,7 +1,18 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.routes import agent_loop, agents, chat, conversations, documents, documents_ws, health, mcp, traces
+from app.api.routes import (
+    agent_loop,
+    agents,
+    chat,
+    conversations,
+    documents,
+    documents_ws,
+    health,
+    mcp,
+    multi_agent,
+    traces,
+)
 from app.db.database import get_db
 from app.db.models import DocumentStatus, MessageRole
 from app.db.repositories import ConversationRepository, DocumentRepository
@@ -11,6 +22,7 @@ router = APIRouter()
 router.include_router(health.router)
 router.include_router(agents.router)
 router.include_router(agent_loop.router)
+router.include_router(multi_agent.router)
 router.include_router(mcp.router)
 router.include_router(documents.router)
 router.include_router(documents_ws.router)

@@ -66,3 +66,5 @@ Results are written to `eval/results/<label>.json`.
 For a full **hand-read error analysis** (random sample → open coding → ranked problems → fix prediction), see [`error_analysis/README.md`](error_analysis/README.md).
 
 For **agent trajectory evals** (path vs answer, prompt injection before/after), see [`trajectory_evals/README.md`](trajectory_evals/README.md).
+
+For the **single agent vs specialist team** race (quality, speed, tokens, cost), see [`multi_agent/README.md`](multi_agent/README.md).

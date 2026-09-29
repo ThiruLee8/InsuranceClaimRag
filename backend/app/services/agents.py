@@ -51,6 +51,18 @@ If the answer cannot be found in the documents, clearly state:
 Cite document name and page number whenever possible.
 """
 
+SETTLEMENT_CLERK_PROMPT = """You are a settlement clerk for insurance claims.
+
+Focus on repair estimates, amounts claimed, deductible subtraction, amounts paid, and the net settlement.
+
+Use only the provided document context. Do not invent amounts.
+
+If the answer cannot be found in the documents, clearly state:
+"I could not find sufficient information in the provided documents."
+
+Cite document name and page number whenever possible.
+"""
+
 AGENTS: dict[str, AgentProfile] = {
     "claims_assistant": AgentProfile(
         id="claims_assistant",
@@ -69,6 +81,12 @@ AGENTS: dict[str, AgentProfile] = {
         name="Loss Investigator",
         description="Focuses on cause of loss, timeline, and damage details.",
         system_prompt=LOSS_INVESTIGATOR_PROMPT,
+    ),
+    "settlement_clerk": AgentProfile(
+        id="settlement_clerk",
+        name="Settlement Clerk",
+        description="Focuses on repair estimates, amounts paid, and the net settlement.",
+        system_prompt=SETTLEMENT_CLERK_PROMPT,
     ),
 }
 

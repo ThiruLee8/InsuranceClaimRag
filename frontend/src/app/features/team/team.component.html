@@ -1,0 +1,224 @@
+<section class="team-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Week 10 · Module 5</p>
+      <h1>Multi-agent, with the numbers</h1>
+        <p>
+        A manager splits the claim question and hands each piece to a specialist.
+        That team races the single ReAct agent on the same tests. Chat stays one-shot RAG — it was not in this race.
+      </p>
+    </div>
+    <a class="btn btn--ghost" routerLink="/agent">Open the single agent</a>
+  </header>
+
+  <div class="roles">
+    <article class="role-card role-card--host">
+      <p class="role-card__id">Orchestrator</p>
+      <p>The manager matches the question to Agent Cards and decides whether the specialists can run together.</p>
+    </article>
+    <article class="role-card">
+      <p class="role-card__id">Workers</p>
+      <p>Coverage, loss, and settlement each search once and write only their slice. The original question is pasted again on every hand-off.</p>
+    </article>
+    <article class="role-card">
+      <p class="role-card__id">MCP vs A2A</p>
+      <p>{{ meta?.mcpVsA2a || 'MCP reaches tools. A2A reaches other agents.' }}</p>
+    </article>
+  </div>
+
+  @if (cards.length) {
+    <div class="cards">
+      @for (card of cards; track card.id) {
+        <article class="mini-card">
+          <h2>{{ card.name }}</h2>
+          <p>{{ card.description }}</p>
+          <p class="url"><code>{{ card.url }}</code></p>
+        </article>
+      }
+    </div>
+  }
+
+  <p class="frameworks">{{ meta?.frameworks }}</p>
+
+  <details class="howto" open>
+    <summary>How the mentor checks this</summary>
+    <ol>
+      <li>The suite below races the team and the single agent on the <strong>same four questions</strong>.</li>
+      <li>Each side reports <strong>quality, speed, tokens, and cost</strong>.</li>
+      <li>The shipped side is the one the rule picks, including when the team loses.</li>
+      <li>Under the table: when a team is worth the hand-off, and when it is not.</li>
+    </ol>
+    <p class="rule">{{ meta?.decisionRule || suite?.summary?.verdict?.rule }}</p>
+  </details>
+
+  @if (errorMessage) {
+    <p class="error-banner">{{ errorMessage }}</p>
+  }
+
+  @if (suite) {
+    <section class="ship">
+      <p class="ship__kicker">Shipped</p>
+      <h2>{{ shipLabel(suite.summary.verdict.ship) }}</h2>
+      <p>{{ suite.summary.verdict.rationale }}</p>
+      <p class="method">{{ suite.method.note }}</p>
+    </section>
+
+    <div class="metrics">
+      <article>
+        <p>Quality</p>
+        <strong>{{ pct(suite.summary.single.quality) }} <span>vs</span> {{ pct(suite.summary.team.quality) }}</strong>
+        <em>single vs team</em>
+      </article>
+      <article>
+        <p>Speed</p>
+        <strong>{{ suite.summary.single.elapsedMs | number: '1.0-0' }} <span>vs</span> {{ suite.summary.team.elapsedMs | number: '1.0-0' }} ms</strong>
+        <em>mean wait</em>
+      </article>
+      <article>
+        <p>Tokens</p>
+        <strong>{{ suite.summary.single.estimatedTokens | number: '1.0-0' }} <span>vs</span> {{ suite.summary.team.estimatedTokens | number: '1.0-0' }}</strong>
+        <em>mean, chars ÷ 4</em>
+      </article>
+      <article>
+        <p>Cost</p>
+        <strong>{{ suite.summary.single.costUnits | number: '1.3-3' }} <span>vs</span> {{ suite.summary.team.costUnits | number: '1.3-3' }}</strong>
+        <em>calls + tokens / 4000</em>
+      </article>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Test</th>
+            <th>Quality</th>
+            <th>Speed (ms)</th>
+            <th>Tokens</th>
+            <th>Cost</th>
+            <th>Ships</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of suite.cases; track row.id) {
+            <tr>
+              <td>
+                <strong>{{ row.label }}</strong>
+                <span>{{ row.parallel ? 'parallel' : 'one path' }} · {{ row.workers.length }} specialist{{ row.workers.length === 1 ? '' : 's' }}</span>
+              </td>
+              <td>{{ pct(row.single.quality) }} / {{ pct(row.team.quality) }}</td>
+              <td>{{ row.single.elapsedMs | number: '1.0-0' }} / {{ row.team.elapsedMs | number: '1.0-0' }}</td>
+              <td>{{ row.single.estimatedTokens | number: '1.0-0' }} / {{ row.team.estimatedTokens | number: '1.0-0' }}</td>
+              <td>{{ row.single.costUnits | number: '1.2-2' }} / {{ row.team.costUnits | number: '1.2-2' }}</td>
+              <td>{{ shipLabel(row.verdict.ship) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <p class="caption">Each cell is single / team. Mean task re-send on the team: {{ suite.summary.contextResendTokensMean | number: '1.0-0' }} tokens.</p>
+    </div>
+
+    <div class="worth">
+      <article>
+        <h2>Worth a team</h2>
+        <p>{{ suite.summary.worthIt.when }}</p>
+        @if (suite.summary.worthIt.parallelFasterOn.length) {
+          <p class="caption">Faster here without losing quality: {{ suite.summary.worthIt.parallelFasterOn.join(', ') }}.</p>
+        }
+      </article>
+      <article>
+        <h2>Not worth a team</h2>
+        <p>{{ suite.summary.worthIt.whenNot }}</p>
+      </article>
+    </div>
+  }
+
+  <section class="live">
+    <div class="panel-head">
+      <h2>Race one question live</h2>
+      <p>Uses Ollama. The suite above is the recorded comparison; this run is the same code on one question.</p>
+    </div>
+    <div class="samples">
+      @for (item of cases; track item.id) {
+        <button type="button" class="chip" [class.chip--on]="selectedCaseId === item.id" [disabled]="running" (click)="selectCase(item)">
+          {{ item.label }}
+        </button>
+      }
+    </div>
+    @if (selectedWhy()) {
+      <p class="sample-why">{{ selectedWhy() }}</p>
+    }
+    <textarea rows="3" [value]="task" [disabled]="running" (input)="onTaskInput($event)"></textarea>
+    <button type="button" class="btn btn--primary" [disabled]="running || !task.trim()" (click)="raceTask()">
+      <mat-icon>play_arrow</mat-icon>
+      {{ running ? 'Racing…' : 'Race single vs team' }}
+    </button>
+    @if (running) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+  </section>
+
+  @if (race) {
+    <section class="ship">
+      <p class="ship__kicker">This question</p>
+      <h2>{{ shipLabel(race.verdict.ship) }}</h2>
+      <p>{{ race.verdict.rationale }}</p>
+      <p class="method">{{ race.team.plan.reason }}</p>
+    </section>
+
+    <div class="metrics">
+      <article>
+        <p>Quality</p>
+        <strong>{{ pct(race.single.summary.quality) }} <span>vs</span> {{ pct(race.team.summary.quality) }}</strong>
+        <em>same assertions</em>
+      </article>
+      <article>
+        <p>Speed</p>
+        <strong>{{ race.single.summary.elapsedMs | number: '1.0-0' }} <span>vs</span> {{ race.team.summary.elapsedMs | number: '1.0-0' }} ms</strong>
+        <em>wall clock</em>
+      </article>
+      <article>
+        <p>Tokens</p>
+        <strong>{{ race.single.summary.estimatedTokens | number: '1.0-0' }} <span>vs</span> {{ race.team.summary.estimatedTokens | number: '1.0-0' }}</strong>
+        <em>{{ race.team.metrics.contextResendTokens }} re-sent with the task</em>
+      </article>
+      <article>
+        <p>Cost</p>
+        <strong>{{ race.single.summary.costUnits | number: '1.3-3' }} <span>vs</span> {{ race.team.summary.costUnits | number: '1.3-3' }}</strong>
+        <em>{{ race.single.metrics.llmCalls }} vs {{ race.team.metrics.llmCalls }} model calls</em>
+      </article>
+    </div>
+
+    <p class="method">{{ race.plannerNote }} That extra plan would be about {{ race.plannerCallTokens }} tokens.</p>
+
+    <div class="answers">
+      <article>
+        <h2>Single agent</h2>
+        <div class="prose" [innerHTML]="race.single.answer | markdown"></div>
+      </article>
+      <article>
+        <h2>Team</h2>
+        <div class="prose" [innerHTML]="race.team.answer | markdown"></div>
+      </article>
+    </div>
+
+    <div class="handoffs">
+      <h2>A2A tasks</h2>
+      <p class="caption">
+        Lifecycle:
+        {{ (meta?.lifecycle || ['submitted', 'working', 'completed', 'failed', 'canceled']).join(' · ') }}.
+        Specialist time added up to {{ race.team.metrics.workerElapsedMs | number: '1.0-0' }} ms;
+        wall clock was {{ race.team.metrics.elapsedMs | number: '1.0-0' }} ms.
+      </p>
+      @for (item of race.team.tasks; track item.id) {
+        <article class="handoff">
+          <header>
+            <strong>{{ item.specialistName }}</strong>
+            <span>{{ history(item.history) }}</span>
+          </header>
+          <p>{{ item.instruction }}</p>
+          <p class="caption">{{ item.contextResendTokens }} tokens of the original task were pasted into this hand-off.</p>
+        </article>
+      }
+    </div>
+  }
+</section>
