@@ -1,0 +1,172 @@
+<section class="production-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Week 11 · Module 6</p>
+      <h1>The app watches itself</h1>
+      <p>
+        Every answer is a trace. Every step has its own time and cost. A vague complaint can be
+        looked up, and a real miss becomes a test that stays.
+      </p>
+    </div>
+  </header>
+
+  <details class="howto" open>
+    <summary>How the mentor checks this</summary>
+    <ol>
+      <li>Find one past answer from a vague complaint, without reading the log by hand.</li>
+      <li>The log shows time and cost <strong>per step</strong>, and the total is the sum of those steps.</li>
+      <li>Cost per request was measured, then cut with a prompt cache, a semantic cache, and a cheaper model for easy questions.</li>
+      <li>A real miss (the invented investigator) is now a test. The bad answer fails it. The corrected answer passes.</li>
+    </ol>
+  </details>
+
+  @if (errorMessage) {
+    <p class="error-banner">{{ errorMessage }}</p>
+  }
+
+  @if (report) {
+    <section class="ship">
+      <p class="ship__kicker">Measured, same answers</p>
+      <h2>Cost per 1,000 requests {{ perThousand(report.baseline.costPerThousandUsd) }} → {{ perThousand(report.improved.costPerThousandUsd) }}</h2>
+      <p>{{ report.method.note }}</p>
+    </section>
+
+    <div class="metrics">
+      <article>
+        <p>Cost</p>
+        <strong>{{ report.savings.costPct | number: '1.0-0' }}% lower</strong>
+        <em>{{ usd(report.baseline.meanCostUsd) }} → {{ usd(report.improved.meanCostUsd) }} per request</em>
+      </article>
+      <article>
+        <p>Billed tokens</p>
+        <strong>{{ report.savings.billedTokenPct | number: '1.0-0' }}% lower</strong>
+        <em>{{ report.baseline.meanBilledTokens | number: '1.0-0' }} → {{ report.improved.meanBilledTokens | number: '1.0-0' }}</em>
+      </article>
+      <article>
+        <p>Time</p>
+        <strong>{{ report.savings.latencyPct | number: '1.0-0' }}% lower</strong>
+        <em>{{ report.baseline.meanElapsedMs | number: '1.0-0' }} → {{ report.improved.meanElapsedMs | number: '1.0-0' }} ms</em>
+      </article>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>One request, step by step</h2>
+        <p>Pick a question. The total under the table is the sum of the spans, not a separate lump.</p>
+      </div>
+      <div class="samples">
+        @for (item of report.improvedItems; track item.id) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="item.id === selectedId"
+            (click)="select(item.id)"
+          >
+            {{ item.id }}
+          </button>
+        }
+      </div>
+      @if (selected) {
+        <p class="question">{{ selected.question }}</p>
+        <p class="caption">{{ routeLabel(selected.route) }} · {{ selected.model || 'no model call' }}</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Time</th>
+                <th>Tokens in / out</th>
+                <th>Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (span of selected.spans; track span.spanId) {
+                <tr>
+                  <td>
+                    <strong>{{ span.name }}</strong>
+                    @if (span.cachedInputTokens) {
+                      <span>prompt cache · {{ span.cachedInputTokens }} tokens at 10%</span>
+                    }
+                  </td>
+                  <td>{{ span.elapsedMs | number: '1.0-1' }} ms</td>
+                  <td>{{ span.inputTokens }} / {{ span.outputTokens }}</td>
+                  <td>{{ usd(span.costUsd) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <p class="caption">
+            Total {{ selected.elapsedMs | number: '1.0-1' }} ms · {{ usd(selected.costUsd) }} ·
+            {{ selected.billedTokens | number: '1.0-0' }} billed tokens
+          </p>
+        </div>
+      }
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Support drill</h2>
+        <p>
+          The complaint does not name the trace. Search keeps yesterday’s requests, then ranks them
+          by the words that are left. The same search is what the test runs over 1,000 extra rows.
+        </p>
+      </div>
+      <textarea #complaintBox rows="2" [value]="complaint" (input)="onComplaint($event)"></textarea>
+      <button type="button" class="btn btn--primary" [disabled]="searching" (click)="runSearch(complaintBox.value)">
+        <mat-icon>search</mat-icon>
+        Find the answer
+      </button>
+      @if (support) {
+        <p class="caption">
+          Scanned {{ support.scanned }} requests
+          @if (support.restrictedToDay) {
+            · kept {{ support.when }}
+          }
+        </p>
+        @for (hit of support.hits; track hit.requestId) {
+          <article class="hit">
+            <p class="hit__id">{{ hit.requestId }} · {{ hit.timestamp }}</p>
+            <p><strong>{{ hit.question }}</strong></p>
+            <p>{{ hit.answer }}</p>
+          </article>
+        }
+      }
+    </section>
+
+    <div class="split">
+      <article class="panel">
+        <h2>Failure → test</h2>
+        <p class="caption">{{ report.failure.sourceTraceId }} · {{ report.failure.id }}</p>
+        <p><strong>{{ report.failure.question }}</strong></p>
+        <p class="bad">Bad: {{ report.failure.badAnswer }}</p>
+        <p class="good">Fixed: {{ report.failure.fixedAnswer }}</p>
+        <p>{{ report.failure.note }}</p>
+      </article>
+      <article class="panel">
+        <h2>At 10× traffic</h2>
+        <p>
+          Breaks first: <strong>{{ report.tenX.breaksFirst }}</strong>
+          ({{ report.tenX.generateShareOfTime | percent: '1.0-0' }} of the time).
+          One model process does about {{ report.tenX.oneWorkerRequestsPerMinute | number: '1.0-0' }} requests a minute.
+        </p>
+        <p>{{ report.tenX.atTenX }}</p>
+        <ol>
+          @for (step of report.tenX.plan; track step) {
+            <li>{{ step }}</li>
+          }
+        </ol>
+      </article>
+    </div>
+
+    <section class="panel">
+      <h2>Fallback and the last resort</h2>
+      <p>
+        With a limit of {{ report.fallback.limit }} on the cheap model, the next easy question
+        ({{ report.fallback.second.id }}) fell back to {{ report.fallback.second.model }}.
+        The route span says: {{ report.fallback.second.reason }}
+      </p>
+      <p>{{ report.fineTuning }}</p>
+      <p class="caption">{{ report.observability.langsmith }} {{ report.observability.phoenix }}</p>
+    </section>
+  }
+</section>

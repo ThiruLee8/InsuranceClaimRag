@@ -40,6 +40,11 @@ export const routes: Routes = [
           import('./features/team/team.component').then((m) => m.TeamComponent),
       },
       {
+        path: 'production',
+        loadComponent: () =>
+          import('./features/production/production.component').then((m) => m.ProductionComponent),
+      },
+      {
         path: 'conversations',
         loadComponent: () =>
           import('./features/conversations/conversations.component').then(

@@ -1,0 +1,12 @@
+{
+  "id": "hallucinated-investigator",
+  "sourceTraceId": "seed-009-gen-halluc",
+  "question": "Who investigated claim CLM-2024-00847?",
+  "context": "Claim CLM-2024-00847 was investigated by field adjuster A. Ramirez.",
+  "badAnswer": "The claim was investigated by field surveyor M. Chen.",
+  "fixedAnswer": "The claim was investigated by field adjuster A. Ramirez.",
+  "note": "Retrieved context names A. Ramirez. The answer invented M. Chen, who is the damage assessor on a different document. Open-coded in eval/error_analysis before this case was promoted.",
+  "mustContain": ["Ramirez"],
+  "mustNotContain": ["Chen"],
+  "promotedAt": "2026-10-05T12:00:00+00:00"
+}

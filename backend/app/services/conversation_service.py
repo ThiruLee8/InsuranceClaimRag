@@ -23,6 +23,7 @@ from app.schemas import (
 )
 from app.services.rag_service import RAGService
 from app.services.trace_service import get_trace_service
+from app.services.production import span_totals
 
 logger = get_logger(__name__)
 
@@ -227,32 +228,29 @@ class ConversationService:
         conversation.UpdatedAt = datetime.now(timezone.utc)
         self.repo.update(conversation)
 
-        # Complete trace for error analysis (always includes chunk text).
-        try:
-            get_trace_service().record(
-                question=payload.question,
-                answer=result.answer,
-                sources=[
-                    {
-                        "documentId": hit.document_id,
-                        "chunkId": hit.chunk_id,
-                        "fileName": hit.file_name,
-                        "pageNumber": hit.page_number,
-                        "score": hit.score,
-                        "content": hit.content,
-                    }
-                    for hit in result.sources
-                ],
-                conversation_id=str(conversation.Id),
-                message_id=str(assistant_message.Id),
-                agent_id=result.agent_id,
-                model=result.model,
-                original_question=result.original_question,
-                search_query=result.search_query,
-                search_mode=result.search_mode,
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("trace_record_failed", error=str(exc))
+        self._record_trace(
+            question=payload.question,
+            answer=result.answer,
+            sources=[
+                {
+                    "documentId": hit.document_id,
+                    "chunkId": hit.chunk_id,
+                    "fileName": hit.file_name,
+                    "pageNumber": hit.page_number,
+                    "score": hit.score,
+                    "content": hit.content,
+                }
+                for hit in result.sources
+            ],
+            conversation_id=str(conversation.Id),
+            message_id=str(assistant_message.Id),
+            agent_id=result.agent_id,
+            model=result.model,
+            original_question=result.original_question,
+            search_query=result.search_query,
+            search_mode=result.search_mode,
+            spans=result.spans,
+        )
 
         logger.info(
             "chat_completed",
@@ -370,31 +368,29 @@ class ConversationService:
             conversation.UpdatedAt = datetime.now(timezone.utc)
             self.repo.update(conversation)
 
-            try:
-                get_trace_service().record(
-                    question=payload.question,
-                    answer=answer,
-                    sources=[
-                        {
-                            "documentId": hit.document_id,
-                            "chunkId": hit.chunk_id,
-                            "fileName": hit.file_name,
-                            "pageNumber": hit.page_number,
-                            "score": hit.score,
-                            "content": hit.content,
-                        }
-                        for hit in hits
-                    ],
-                    conversation_id=str(conversation.Id),
-                    message_id=str(assistant_message.Id),
-                    agent_id=agent_id,
-                    model=model_name,
-                    original_question=str(original_question or payload.question),
-                    search_query=str(search_query or payload.question),
-                    search_mode=str(search_mode) if search_mode else None,
-                )
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("trace_record_failed", error=str(exc))
+            self._record_trace(
+                question=payload.question,
+                answer=answer,
+                sources=[
+                    {
+                        "documentId": hit.document_id,
+                        "chunkId": hit.chunk_id,
+                        "fileName": hit.file_name,
+                        "pageNumber": hit.page_number,
+                        "score": hit.score,
+                        "content": hit.content,
+                    }
+                    for hit in hits
+                ],
+                conversation_id=str(conversation.Id),
+                message_id=str(assistant_message.Id),
+                agent_id=agent_id,
+                model=model_name,
+                original_question=str(original_question or payload.question),
+                search_query=str(search_query or payload.question),
+                search_mode=str(search_mode) if search_mode else None,
+                spans=list(event.get("spans") or []),
+            )
 
             logger.info(
                 "chat_stream_completed",
@@ -416,3 +412,39 @@ class ConversationService:
                 done_event["searchQuery"] = search_query
                 done_event["searchMode"] = search_mode
             yield done_event
+
+    def _record_trace(
+        self,
+        *,
+        question: str,
+        answer: str,
+        sources: list,
+        conversation_id: str,
+        message_id: str,
+        agent_id: str | None,
+        model: str | None,
+        original_question: str | None,
+        search_query: str | None,
+        search_mode: str | None,
+        spans: list | None,
+    ) -> None:
+        try:
+            rows = list(spans or [])
+            totals = span_totals(rows) if rows else None
+            get_trace_service().record(
+                question=question,
+                answer=answer,
+                sources=sources,
+                conversation_id=conversation_id,
+                message_id=message_id,
+                agent_id=agent_id,
+                model=model,
+                original_question=original_question,
+                search_query=search_query,
+                search_mode=search_mode,
+                spans=rows or None,
+                elapsed_ms=None if totals is None else totals["elapsedMs"],
+                cost_usd=None if totals is None else totals["costUsd"],
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("trace_record_failed", error=str(exc))

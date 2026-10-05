@@ -182,6 +182,19 @@ class TraceRetrievedChunk(BaseModel):
     content: Optional[str] = None
 
 
+class TraceSpanOut(BaseModel):
+    spanId: Optional[str] = None
+    name: str
+    elapsedMs: float = 0
+    inputTokens: int = 0
+    outputTokens: int = 0
+    cachedInputTokens: int = 0
+    costUsd: float = 0
+    model: Optional[str] = None
+    status: Optional[str] = None
+    attributes: dict = Field(default_factory=dict)
+
+
 class TraceOut(BaseModel):
     traceId: str
     timestamp: str
@@ -195,6 +208,9 @@ class TraceOut(BaseModel):
     model: Optional[str] = None
     retrieved: list[TraceRetrievedChunk] = []
     answer: str
+    spans: list[TraceSpanOut] = []
+    elapsedMs: Optional[float] = None
+    costUsd: Optional[float] = None
 
 
 class TraceListOut(BaseModel):

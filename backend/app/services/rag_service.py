@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.services.agents import get_agent
 from app.services.llm_service import LLMProvider, OllamaLLMService
+from app.services.production import estimate_tokens, make_span, note_system_prompt, price_tokens
 from app.services.vector_gateway_client import VectorGatewayClient, VectorSearchHit
 
 logger = get_logger(__name__)
@@ -35,6 +37,7 @@ class RAGResult:
     original_question: str = ""
     search_query: str = ""
     search_mode: str | None = None
+    spans: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -160,6 +163,10 @@ class RAGService:
             search_mode=result.search_mode,
         )
 
+    def _append_span(self, spans: list[dict[str, Any]] | None, span: dict[str, Any]) -> None:
+        if spans is not None:
+            spans.append(span)
+
     async def _prepare(
         self,
         question: str,
@@ -167,22 +174,51 @@ class RAGService:
         agent_id: str | None = None,
         model: str | None = None,
         rewrite: bool = True,
+        spans: list[dict[str, Any]] | None = None,
     ) -> tuple[Any, str, list[VectorSearchHit], str, str, str, str | None]:
         agent = get_agent(agent_id)
         selected_model = (model or self.settings.ollama_model).strip() or self.settings.ollama_model
         original = question.strip()
+        rewrite_started = time.perf_counter()
+        called_llm = bool(rewrite and self._should_rewrite(original))
         search_query = (
             await self._rewrite_question(original, model=selected_model)
             if rewrite
             else original
         )
+        rewrite_in = estimate_tokens(original) + estimate_tokens(_REWRITE_SYSTEM) if called_llm else 0
+        rewrite_out = estimate_tokens(search_query) if called_llm else 0
+        self._append_span(
+            spans,
+            make_span(
+                "rewrite",
+                elapsed_ms=(time.perf_counter() - rewrite_started) * 1000,
+                input_tokens=rewrite_in,
+                output_tokens=rewrite_out,
+                cost_usd=price_tokens(selected_model, rewrite_in, rewrite_out) if called_llm else 0,
+                model=selected_model if called_llm else None,
+                attributes={"skipped": not called_llm},
+            ),
+        )
 
+        retrieve_started = time.perf_counter()
         search_result = self.vector_gateway.search(
             question=search_query,
             top_k=self.settings.top_k,
             similarity_threshold=self.settings.similarity_threshold,
             search_mode=self.settings.search_mode,
             rerank=self.settings.enable_rerank,
+        )
+        query_tokens = estimate_tokens(search_query)
+        self._append_span(
+            spans,
+            make_span(
+                "retrieve",
+                elapsed_ms=(time.perf_counter() - retrieve_started) * 1000,
+                input_tokens=query_tokens,
+                cost_usd=round(query_tokens * 0.10 / 1_000_000, 8),
+                attributes={"searchMode": search_result.search_mode},
+            ),
         )
         hits = search_result.hits
         search_mode = search_result.search_mode
@@ -213,8 +249,9 @@ class RAGService:
         model: str | None = None,
         debug: bool = False,
     ) -> RAGResult:
+        spans: list[dict[str, Any]] = []
         agent, selected_model, hits, prompt, original, search_query, search_mode = (
-            await self._prepare(question, agent_id=agent_id, model=model)
+            await self._prepare(question, agent_id=agent_id, model=model, spans=spans)
         )
 
         if not hits:
@@ -226,8 +263,10 @@ class RAGService:
                 original_question=original,
                 search_query=search_query,
                 search_mode=search_mode,
+                spans=spans,
             )
 
+        started = time.perf_counter()
         answer = await self.llm_service.generate(
             prompt=prompt,
             system=agent.system_prompt,
@@ -235,6 +274,7 @@ class RAGService:
         )
         if not answer:
             answer = "I could not find sufficient information in the provided documents."
+        spans.append(self._generate_span(prompt, agent.system_prompt, answer, selected_model, started))
         return RAGResult(
             answer=answer,
             sources=hits,
@@ -243,6 +283,35 @@ class RAGService:
             original_question=original,
             search_query=search_query,
             search_mode=search_mode,
+            spans=spans,
+        )
+
+    def _generate_span(
+        self,
+        prompt: str,
+        system: str,
+        answer: str,
+        model: str,
+        started: float,
+    ) -> dict[str, Any]:
+        system_tokens = estimate_tokens(system)
+        cached = system_tokens if note_system_prompt(system) else 0
+        input_tokens = system_tokens + estimate_tokens(prompt)
+        output_tokens = estimate_tokens(answer)
+        return make_span(
+            "generate",
+            elapsed_ms=(time.perf_counter() - started) * 1000,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cached_input_tokens=cached,
+            cost_usd=price_tokens(
+                model,
+                input_tokens,
+                output_tokens,
+                cached_input_tokens=cached,
+            ),
+            model=model,
+            attributes={"promptCache": cached > 0},
         )
 
     async def answer_stream(
@@ -254,8 +323,9 @@ class RAGService:
         debug: bool = False,
     ) -> AsyncIterator[dict[str, Any]]:
         """Yields dict events: status, sources, token, done."""
+        spans: list[dict[str, Any]] = []
         agent, selected_model, hits, prompt, original, search_query, search_mode = (
-            await self._prepare(question, agent_id=agent_id, model=model)
+            await self._prepare(question, agent_id=agent_id, model=model, spans=spans)
         )
 
         yield {
@@ -282,6 +352,7 @@ class RAGService:
                 "originalQuestion": original,
                 "searchQuery": search_query,
                 "searchMode": search_mode,
+                "spans": spans,
                 "_hits": [],
             }
             return
@@ -291,6 +362,7 @@ class RAGService:
         yield {"type": "status", "stage": "generating"}
 
         parts: list[str] = []
+        started = time.perf_counter()
         async for token in self.llm_service.generate_stream(
             prompt=prompt,
             system=agent.system_prompt,
@@ -303,6 +375,7 @@ class RAGService:
         if not answer:
             answer = "I could not find sufficient information in the provided documents."
             yield {"type": "token", "content": answer}
+        spans.append(self._generate_span(prompt, agent.system_prompt, answer, selected_model, started))
 
         yield {
             "type": "done",
@@ -313,5 +386,6 @@ class RAGService:
             "originalQuestion": original,
             "searchQuery": search_query,
             "searchMode": search_mode,
+            "spans": spans,
             "_hits": hits,
         }

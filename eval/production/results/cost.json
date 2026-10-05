@@ -1,0 +1,1096 @@
+{
+  "label": "scripted",
+  "createdAt": "2026-10-05T13:41:45.761440+00:00",
+  "method": {
+    "note": "Both sides answer with the same scripted text, so quality stays even. Times are scripted per step (the capable model waits longer per output token). Dollars use hosted-equivalent prices because local Ollama has no token invoice. Billed tokens count cached prompt tokens at 10%.",
+    "pricesPerMillion": {
+      "llama3.2": {
+        "input": 0.8,
+        "output": 2.4
+      },
+      "llama3.2:1b": {
+        "input": 0.1,
+        "output": 0.3
+      }
+    },
+    "cacheReadFraction": 0.1,
+    "semanticThreshold": 0.66,
+    "capableModel": "llama3.2",
+    "cheapModel": "llama3.2:1b",
+    "tokenRule": "characters \u00f7 4"
+  },
+  "baseline": {
+    "mode": "baseline",
+    "requests": 8,
+    "meanCostUsd": 0.00016544,
+    "costPerThousandUsd": 0.1654,
+    "meanElapsedMs": 186.0,
+    "meanBilledTokens": 183.6
+  },
+  "improved": {
+    "mode": "improved",
+    "requests": 8,
+    "meanCostUsd": 4.143e-05,
+    "costPerThousandUsd": 0.0414,
+    "meanElapsedMs": 124.9,
+    "meanBilledTokens": 79.6
+  },
+  "baselineItems": [
+    {
+      "id": "deductible",
+      "question": "What deductible applies?",
+      "answer": "The All Peril Deductible is USD 1,000.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 126.0,
+      "costUsd": 0.0001366,
+      "billedTokens": 158.0,
+      "spans": [
+        {
+          "spanId": "053a8042d03141ed",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "34cc502ee4d14b98",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 6,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 6e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "fbef912a037e41e0",
+          "name": "generate",
+          "elapsedMs": 80.0,
+          "inputTokens": 143,
+          "outputTokens": 9,
+          "cachedInputTokens": 0,
+          "costUsd": 0.000136,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "deductible-again",
+      "question": "What deductible applies?",
+      "answer": "The All Peril Deductible is USD 1,000.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 126.0,
+      "costUsd": 0.0001366,
+      "billedTokens": 158.0,
+      "spans": [
+        {
+          "spanId": "cdcbcae4d27f4ea9",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "8db98d773e244075",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 6,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 6e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "bbec6cf6e2244893",
+          "name": "generate",
+          "elapsedMs": 80.0,
+          "inputTokens": 143,
+          "outputTokens": 9,
+          "cachedInputTokens": 0,
+          "costUsd": 0.000136,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "question": "What is the Coverage A dwelling limit?",
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 126.0,
+      "costUsd": 0.0001385,
+      "billedTokens": 163.0,
+      "spans": [
+        {
+          "spanId": "310e49feab814868",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "7cc0e178a6fc4ed0",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 9,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 9e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "4d73ea7e9788429b",
+          "name": "generate",
+          "elapsedMs": 80.0,
+          "inputTokens": 145,
+          "outputTokens": 9,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0001376,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "coverage-paraphrase",
+      "question": "What is Coverage A dwelling limit?",
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 126.0,
+      "costUsd": 0.0001376,
+      "billedTokens": 161.0,
+      "spans": [
+        {
+          "spanId": "19105ffc88ed4910",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "96247a01037944c7",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 8,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 8e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "86b05c460cef4496",
+          "name": "generate",
+          "elapsedMs": 80.0,
+          "inputTokens": 144,
+          "outputTokens": 9,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0001368,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "investigator",
+      "question": "Who investigated claim CLM-2024-00847?",
+      "answer": "The claim was investigated by field adjuster A. Ramirez.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 158.0,
+      "costUsd": 0.0001537,
+      "billedTokens": 172.0,
+      "spans": [
+        {
+          "spanId": "8c93e50cf2fd40f3",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "1f10e189001b4a6c",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 9,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 9e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "54a3a78c51934acf",
+          "name": "generate",
+          "elapsedMs": 112.0,
+          "inputTokens": 149,
+          "outputTokens": 14,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0001528,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cause",
+      "question": "What was the cause of the loss?",
+      "answer": "The cause of the loss was a burst flexible supply line on the upstairs bathroom faucet.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 214.0,
+      "costUsd": 0.0001719,
+      "billedTokens": 179.0,
+      "spans": [
+        {
+          "spanId": "16a5a5a368ac44f4",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "788b98948a9544f9",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 7,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 7e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "ac8f854b66c84772",
+          "name": "generate",
+          "elapsedMs": 168.0,
+          "inputTokens": 151,
+          "outputTokens": 21,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0001712,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "compare-figures",
+      "question": "Compare the damage-assessment range with the contractor estimate and say which document each figure comes from.",
+      "answer": "The damage assessment states USD 16,800\u201319,200. The investigation report states contractor estimate EST-4412 at USD 18,450.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 286.0,
+      "costUsd": 0.0002203,
+      "billedTokens": 239.0,
+      "spans": [
+        {
+          "spanId": "5fbf54282faf4274",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "b54ca08c69e84847",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 27,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 2.7e-06,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "5f1713d4174f41b1",
+          "name": "generate",
+          "elapsedMs": 240.0,
+          "inputTokens": 182,
+          "outputTokens": 30,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0002176,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "why-settlement",
+      "question": "Why did the settlement differ from the preliminary damage range, and which document does each number come from?",
+      "answer": "The damage assessment gives a preliminary range of USD 16,800\u201319,200. The settlement letter states a net of USD 19,550 after the deductible.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 326.0,
+      "costUsd": 0.0002283,
+      "billedTokens": 239.0,
+      "spans": [
+        {
+          "spanId": "a6ed68ba7d814270",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "baseline always uses the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "a7c23a7de5d04154",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 27,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 2.7e-06,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "11e1de9b3ec749d1",
+          "name": "generate",
+          "elapsedMs": 280.0,
+          "inputTokens": 177,
+          "outputTokens": 35,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0002256,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    }
+  ],
+  "improvedItems": [
+    {
+      "id": "deductible",
+      "question": "What deductible applies?",
+      "answer": "The All Peril Deductible is USD 1,000.",
+      "model": "llama3.2:1b",
+      "route": "cheap",
+      "elapsedMs": 88.0,
+      "costUsd": 1.76e-05,
+      "billedTokens": 158.0,
+      "spans": [
+        {
+          "spanId": "963e9e17afa84322",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "reason": "single-fact question uses the cheaper model",
+            "preferred": "llama3.2:1b",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "d61dbf15f5e246b4",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": false,
+            "score": null,
+            "matchedQuestion": null
+          }
+        },
+        {
+          "spanId": "01bd4bbce912432b",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 6,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 6e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "4419f0e9f4054401",
+          "name": "generate",
+          "elapsedMs": 40.0,
+          "inputTokens": 143,
+          "outputTokens": 9,
+          "cachedInputTokens": 0,
+          "costUsd": 1.7e-05,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "promptCache": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "deductible-again",
+      "question": "What deductible applies?",
+      "answer": "The All Peril Deductible is USD 1,000.",
+      "model": null,
+      "route": "cache",
+      "elapsedMs": 3.0,
+      "costUsd": 0.0,
+      "billedTokens": 0.0,
+      "spans": [
+        {
+          "spanId": "6329f7da6f584bd1",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "reason": "single-fact question uses the cheaper model",
+            "preferred": "llama3.2:1b",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "13b6c99dc15b46b2",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": true,
+            "score": 1.0,
+            "matchedQuestion": "What deductible applies?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "question": "What is the Coverage A dwelling limit?",
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "model": "llama3.2:1b",
+      "route": "cheap",
+      "elapsedMs": 88.0,
+      "costUsd": 7.84e-06,
+      "billedTokens": 60.4,
+      "spans": [
+        {
+          "spanId": "c4bf1064212a4ddb",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "reason": "single-fact question uses the cheaper model",
+            "preferred": "llama3.2:1b",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "e53aefdc31ef4c63",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": false,
+            "score": null,
+            "matchedQuestion": null
+          }
+        },
+        {
+          "spanId": "f95a047a124c4934",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 9,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 9e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "750f8861f05c4150",
+          "name": "generate",
+          "elapsedMs": 40.0,
+          "inputTokens": 145,
+          "outputTokens": 9,
+          "cachedInputTokens": 114,
+          "costUsd": 6.94e-06,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "promptCache": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "coverage-paraphrase",
+      "question": "What is Coverage A dwelling limit?",
+      "answer": "Coverage A (Dwelling) is USD 425,000.",
+      "model": null,
+      "route": "cache",
+      "elapsedMs": 3.0,
+      "costUsd": 0.0,
+      "billedTokens": 0.0,
+      "spans": [
+        {
+          "spanId": "3103ca7fef3d46d5",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "reason": "single-fact question uses the cheaper model",
+            "preferred": "llama3.2:1b",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "bdac74f7de0846d2",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": true,
+            "score": 1.0,
+            "matchedQuestion": "What is the Coverage A dwelling limit?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "investigator",
+      "question": "Who investigated claim CLM-2024-00847?",
+      "answer": "The claim was investigated by field adjuster A. Ramirez.",
+      "model": "llama3.2:1b",
+      "route": "cheap",
+      "elapsedMs": 90.0,
+      "costUsd": 9.74e-06,
+      "billedTokens": 69.4,
+      "spans": [
+        {
+          "spanId": "cf212a7fa123400b",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "reason": "single-fact question uses the cheaper model",
+            "preferred": "llama3.2:1b",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "a950ea34ced74d3f",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": false,
+            "score": null,
+            "matchedQuestion": null
+          }
+        },
+        {
+          "spanId": "50196593e4e5479b",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 9,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 9e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "9ae967d934ef4115",
+          "name": "generate",
+          "elapsedMs": 42.0,
+          "inputTokens": 149,
+          "outputTokens": 14,
+          "cachedInputTokens": 114,
+          "costUsd": 8.84e-06,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "promptCache": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "cause",
+      "question": "What was the cause of the loss?",
+      "answer": "The cause of the loss was a burst flexible supply line on the upstairs bathroom faucet.",
+      "model": "llama3.2:1b",
+      "route": "cheap",
+      "elapsedMs": 111.0,
+      "costUsd": 1.184e-05,
+      "billedTokens": 76.4,
+      "spans": [
+        {
+          "spanId": "8966a378047547e9",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "reason": "single-fact question uses the cheaper model",
+            "preferred": "llama3.2:1b",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "9d9f4b1250284b5c",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": false,
+            "score": null,
+            "matchedQuestion": null
+          }
+        },
+        {
+          "spanId": "e1114c3af0074911",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 7,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 7e-07,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "da9edf44fb914207",
+          "name": "generate",
+          "elapsedMs": 63.0,
+          "inputTokens": 151,
+          "outputTokens": 21,
+          "cachedInputTokens": 114,
+          "costUsd": 1.114e-05,
+          "model": "llama3.2:1b",
+          "status": "ok",
+          "attributes": {
+            "promptCache": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "compare-figures",
+      "question": "Compare the damage-assessment range with the contractor estimate and say which document each figure comes from.",
+      "answer": "The damage assessment states USD 16,800\u201319,200. The investigation report states contractor estimate EST-4412 at USD 18,450.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 288.0,
+      "costUsd": 0.00013822,
+      "billedTokens": 136.4,
+      "spans": [
+        {
+          "spanId": "03670152dbdc40f7",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "multi-part question stays on the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "14f25379c4584190",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": false,
+            "score": null,
+            "matchedQuestion": null
+          }
+        },
+        {
+          "spanId": "01e77f4c2ca34a2f",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 27,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 2.7e-06,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "99960bcf2c324072",
+          "name": "generate",
+          "elapsedMs": 240.0,
+          "inputTokens": 182,
+          "outputTokens": 30,
+          "cachedInputTokens": 114,
+          "costUsd": 0.00013552,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "why-settlement",
+      "question": "Why did the settlement differ from the preliminary damage range, and which document does each number come from?",
+      "answer": "The damage assessment gives a preliminary range of USD 16,800\u201319,200. The settlement letter states a net of USD 19,550 after the deductible.",
+      "model": "llama3.2",
+      "route": "capable",
+      "elapsedMs": 328.0,
+      "costUsd": 0.00014622,
+      "billedTokens": 136.4,
+      "spans": [
+        {
+          "spanId": "92ac3f1649894ed2",
+          "name": "route",
+          "elapsedMs": 1.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "reason": "multi-part question stays on the capable model",
+            "preferred": "llama3.2",
+            "fallbackFrom": null,
+            "fallbackReason": null,
+            "router": "litellm-shaped"
+          }
+        },
+        {
+          "spanId": "cf2988822ffc4c62",
+          "name": "semantic_cache",
+          "elapsedMs": 2.0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 0.0,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "hit": false,
+            "score": null,
+            "matchedQuestion": null
+          }
+        },
+        {
+          "spanId": "4a95edb18da34f16",
+          "name": "retrieve",
+          "elapsedMs": 45.0,
+          "inputTokens": 27,
+          "outputTokens": 0,
+          "cachedInputTokens": 0,
+          "costUsd": 2.7e-06,
+          "model": null,
+          "status": "ok",
+          "attributes": {
+            "searchMode": "hybrid"
+          }
+        },
+        {
+          "spanId": "569703e583904202",
+          "name": "generate",
+          "elapsedMs": 280.0,
+          "inputTokens": 177,
+          "outputTokens": 35,
+          "cachedInputTokens": 114,
+          "costUsd": 0.00014352,
+          "model": "llama3.2",
+          "status": "ok",
+          "attributes": {
+            "promptCache": true
+          }
+        }
+      ]
+    }
+  ],
+  "savings": {
+    "costPct": 75.0,
+    "latencyPct": 32.8,
+    "billedTokenPct": 56.6
+  },
+  "fallback": {
+    "limit": 1,
+    "first": {
+      "id": "deductible",
+      "model": "llama3.2:1b",
+      "route": "cheap"
+    },
+    "second": {
+      "id": "investigator",
+      "model": "llama3.2",
+      "route": "fallback",
+      "reason": "rate_limit on llama3.2:1b; fell back to llama3.2",
+      "fallbackFrom": "llama3.2:1b"
+    }
+  },
+  "tenX": {
+    "breaksFirst": "generate",
+    "generateShareOfTime": 0.706,
+    "meanElapsedMs": 124.9,
+    "oneWorkerRequestsPerMinute": 480.4,
+    "atTenX": "One local model process finishes about 480 requests a minute at this mean. Ten times that rate queues on generate (71% of the time) before retrieval or the API process fills up.",
+    "plan": [
+      "Keep the semantic cache so a repeated question never calls the model.",
+      "Keep single-fact questions on the cheap model. The capable model only sees multi-part questions.",
+      "When the generate queue grows, add a second model process. Retrieval is not the first limit.",
+      "On a rate limit or a dead model, fall back and record it on the route span. Do not drop the request.",
+      "Fine-tune only after the same wrong answer survives the failure test. Fine-tuning does not add capacity."
+    ]
+  },
+  "failure": {
+    "id": "hallucinated-investigator",
+    "sourceTraceId": "seed-009-gen-halluc",
+    "question": "Who investigated claim CLM-2024-00847?",
+    "badAnswer": "The claim was investigated by field surveyor M. Chen.",
+    "fixedAnswer": "The claim was investigated by field adjuster A. Ramirez.",
+    "note": "Retrieved context names A. Ramirez. The answer invented M. Chen, who is the damage assessor on a different document. Open-coded in eval/error_analysis before this case was promoted."
+  },
+  "fineTuning": "Fine-tuning is the last resort. It does not make generate faster, and it cannot stop a hallucination that a test already catches. Use it only when the same format error remains after caching, routing, and a permanent test.",
+  "observability": {
+    "whatToLog": [
+      "request id and time",
+      "question, retrieved context, and answer",
+      "model and why it was chosen",
+      "one span per step with time, tokens, and cost"
+    ],
+    "openTelemetry": "Each request is a trace. Each step is a span with duration, status, and attributes. An OTLP exporter ships this shape to a collector.",
+    "phoenix": "Arize Phoenix shows these spans beside the retrieved chunks and the answer.",
+    "langsmith": "LangSmith is a hosted view of the same fields: inputs, outputs, tokens, and latency per step."
+  }
+}

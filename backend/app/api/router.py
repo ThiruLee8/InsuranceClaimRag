@@ -11,6 +11,7 @@ from app.api.routes import (
     health,
     mcp,
     multi_agent,
+    production,
     traces,
 )
 from app.db.database import get_db
@@ -29,6 +30,7 @@ router.include_router(documents_ws.router)
 router.include_router(conversations.router)
 router.include_router(chat.router)
 router.include_router(traces.router)
+router.include_router(production.router)
 
 
 @router.get("/dashboard", response_model=ApiResponse[DashboardStats])

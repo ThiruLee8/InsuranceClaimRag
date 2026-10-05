@@ -53,6 +53,9 @@ class TraceService:
         original_question: str | None = None,
         search_query: str | None = None,
         search_mode: str | None = None,
+        spans: list[dict[str, Any]] | None = None,
+        elapsed_ms: float | None = None,
+        cost_usd: float | None = None,
         extra: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
         if not self.enabled:
@@ -89,6 +92,18 @@ class TraceService:
             "retrieved": retrieved,
             "answer": answer,
         }
+        if spans:
+            trace["spans"] = spans
+            trace["elapsedMs"] = (
+                round(float(elapsed_ms), 1)
+                if elapsed_ms is not None
+                else round(sum(float(item.get("elapsedMs") or 0) for item in spans), 1)
+            )
+            trace["costUsd"] = (
+                round(float(cost_usd), 8)
+                if cost_usd is not None
+                else round(sum(float(item.get("costUsd") or 0) for item in spans), 8)
+            )
         if extra:
             trace["extra"] = extra
 
